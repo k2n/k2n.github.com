@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: test | My Octopress Blog]]></title>
+  <link href="http://k2n.github.com/blog/categories/test/atom.xml" rel="self"/>
+  <link href="http://k2n.github.com/"/>
+  <updated>2012-05-28T12:09:43-07:00</updated>
+  <id>http://k2n.github.com/</id>
+  <author>
+    <name><![CDATA[Kenji Nakamura]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[new-post]]></title>
+    <link href="http://k2n.github.com/blog/2012/05/27/new-post/"/>
+    <updated>2012-05-27T19:55:00-07:00</updated>
+    <id>http://k2n.github.com/blog/2012/05/27/new-post</id>
+    <content type="html"><![CDATA[<p>マークダウン記法
+<code>groovy
+println(Hello, world)
+</code></p>
+
+<p>Gist sample <div><script src='https://gist.github.com/1027674.js?file='></script>
+<noscript><pre><code>require 'cgi'
+require 'digest/md5'
+require 'net/https'
+require 'uri'
+
+module Jekyll
+  class GistTag &lt; Liquid::Tag
+    def initialize(tag_name, text, token)
+      super
+      @text           = text
+      @cache_disabled = false
+      @cache_folder   = File.expand_path &quot;../_gist_cache&quot;, File.dirname(__FILE__)
+      FileUtils.mkdir_p @cache_folder
+    end
+
+    def render(context)
+      if parts = @text.match(/([\d]*) (.*)/)
+        gist, file = parts[1].strip, parts[2].strip
+        script_url = script_url_for gist, file
+        code       = get_cached_gist(gist, file) || get_gist_from_web(gist, file)
+        html_output_for script_url, code
+      else
+        &quot;&quot;
+      end
+    end
+
+    def html_output_for(script_url, code)
+      code = CGI.escapeHTML code
+      &quot;&lt;script src='#{script_url}'&gt;&lt;/script&gt;&lt;div&gt;&lt;noscript&gt;&lt;pre&gt;&lt;code&gt;#{code}&lt;/code&gt;&lt;/pre&gt;&lt;/noscript&gt;&lt;/div&gt;&quot;
+    end
+
+    def script_url_for(gist_id, filename)
+      &quot;https://gist.github.com/#{gist_id}.js?file=#{filename}&quot;
+    end
+
+    def get_gist_url_for(gist, file)
+      &quot;https://raw.github.com/gist/#{gist}/#{file}&quot;
+    end
+
+    def cache(gist, file, data)
+      cache_file = get_cache_file_for gist, file
+      File.open(cache_file, &quot;w&quot;) do |io|
+        io.write data
+      end
+    end
+
+    def get_cached_gist(gist, file)
+      return nil if @cache_disabled
+      cache_file = get_cache_file_for gist, file
+      File.read cache_file if File.exist? cache_file
+    end
+
+    def get_cache_file_for(gist, file)
+      bad_chars = /[^a-zA-Z0-9\-_.]/
+      gist      = gist.gsub bad_chars, ''
+      file      = file.gsub bad_chars, ''
+      md5       = Digest::MD5.hexdigest &quot;#{gist}-#{file}&quot;
+      File.join @cache_folder, &quot;#{gist}-#{file}-#{md5}.cache&quot;
+    end
+
+    def get_gist_from_web(gist, file)
+      gist_url          = get_gist_url_for gist, file
+      raw_uri           = URI.parse gist_url
+      https             = Net::HTTP.new raw_uri.host, raw_uri.port
+      https.use_ssl     = true
+      https.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      request           = Net::HTTP::Get.new raw_uri.request_uri
+      data              = https.request request
+      data              = data.body
+      cache gist, file, data unless @cache_disabled
+      data
+    end
+  end
+
+  class GistTagNoCache &lt; GistTag
+    def initialize(tag_name, text, token)
+      super
+      @cache_disabled = true
+    end
+  end
+end
+
+Liquid::Template.register_tag('gist', Jekyll::GistTag)
+Liquid::Template.register_tag('gistnocache', Jekyll::GistTagNoCache)</code></pre></noscript></div>
+ is embedded.</p>
+]]></content>
+  </entry>
+  
+</feed>
