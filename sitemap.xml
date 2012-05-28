@@ -1,19 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>
     <url>
-        <loc>http://k2n.github.com/blog/2012/05/27/new-post/</loc>
-        <lastmod>2012-05-28T12:09:42-07:00</lastmod>
-    </url>
-    <url>
-        <loc>http://k2n.github.com/blog/2012/05/28/new-post/</loc>
-        <lastmod>2012-05-28T11:59:36-07:00</lastmod>
-    </url>
-    <url>
         <loc>http://k2n.github.com/blog/archives/</loc>
-        <lastmod>2012-05-28T12:09:42-07:00</lastmod>
+        <lastmod>2012-05-27T19:27:09-07:00</lastmod>
     </url>
     <url>
         <loc>http://k2n.github.com/</loc>
-        <lastmod>2012-05-28T12:09:42-07:00</lastmod>
+        <lastmod>2012-05-27T19:27:09-07:00</lastmod>
     </url>
 </urlset>
