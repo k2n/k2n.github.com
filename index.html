@@ -5,11 +5,21 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>My Octopress Blog</title>
+  <title>Code Critique</title>
   <meta name="author" content="Kenji Nakamura">
 
   
-  <meta name="description" content=" Blog Archives Recent Posts ">
+  <meta name="description" content="Class Descriptor要素と属性 jackrabbit-ocm-1.5.dtdに基づく。 class-descriptor XML1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+&lt;!ATTLIST class-descriptor className CDATA #REQUIRED &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -24,7 +34,7 @@
   <script src="/javascripts/modernizr-2.0.js"></script>
   <script src="/javascripts/ender.js"></script>
   <script src="/javascripts/octopress.js" type="text/javascript"></script>
-  <link href="/atom.xml" rel="alternate" title="My Octopress Blog" type="application/atom+xml">
+  <link href="/atom.xml" rel="alternate" title="Code Critique" type="application/atom+xml">
   <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
 <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
 <link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
@@ -35,9 +45,9 @@
 
 <body   >
   <header role="banner"><hgroup>
-  <h1><a href="/">My Octopress Blog</a></h1>
+  <h1><a href="/">Code Critique</a></h1>
   
-    <h2>A blogging framework for hackers.</h2>
+    <h2>Dicerning the value of brilliant code</h2>
   
 </hgroup>
 
@@ -65,6 +75,2000 @@
       <div class="blog-index">
   
   
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/05/29/jackrabbit-ocm-class-descriptor/">Jackrabbit-ocm Class Descriptor</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-05-29T11:27:00-07:00" pubdate data-updated="true">05/29/2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>Class Descriptor要素と属性</h1>
+
+<p><a href="https://github.com/k2n/jackrabbit-ocm/blob/master/src/main/resources/org/apache/jackrabbit/ocm/config/jackrabbit-ocm-1.5.dtd">jackrabbit-ocm-1.5.dtd</a>に基づく。</p>
+
+<h1>class-descriptor</h1>
+
+<figure class='code'><figcaption><span>XML</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='dtd'><span class='line'><span class="k">&lt;!ATTLIST</span> <span class="nt">class-descriptor</span>
+</span><span class='line'>    <span class="na">className</span> <span class="kc">CDATA</span> <span class="kc">#REQUIRED</span>            <span class="na">==</span><span class="o">|</span> <span class="na">クラス名</span>
+</span><span class='line'>    <span class="na">jcrType</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>               <span class="na">==</span><span class="o">|</span> <span class="na">プライマリーJCRノードタイプ、オプション、既定値はnt:unstructured</span>
+</span><span class='line'>    <span class="na">jcrSuperTypes</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>         <span class="na">==</span><span class="o">|</span> <span class="na">JCR親タイプ、オプション</span>
+</span><span class='line'>    <span class="na">jcrMixinTypes</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>         <span class="na">==</span><span class="o">|</span> <span class="na">JCR</span> <span class="na">mix-inタイプ（カンマ区切りで複数指定）オプション</span>
+</span><span class='line'>    <span class="na">extend</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>                <span class="na">==</span><span class="o">|</span> <span class="na">親クラス名、オプション</span>
+</span><span class='line'>    <span class="na">abstract</span> <span class="o">(</span><span class="na">true</span><span class="o">|</span><span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>        <span class="na">==</span><span class="o">|</span> <span class="na">抽象クラスで階層マッピング内で使われている場合はtrue</span>
+</span><span class='line'>    <span class="na">interface</span> <span class="o">(</span><span class="na">true</span><span class="o">|</span><span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>       <span class="na">==</span><span class="o">|</span> <span class="na">インターフェースならtrue</span>
+</span><span class='line'>    <span class="na">discriminator</span> <span class="o">(</span><span class="na">true</span><span class="o">|</span><span class="na">false</span><span class="o">)</span> <span class="s2">&quot;true&quot;</span>    <span class="na">==</span><span class="o">|</span> <span class="na">マップされたノードがocm:discriminatorノードタイプを要求する場合はtrue。このタイプはclasssNameプロパティを含む。</span>
+</span><span class='line'><span class="k">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Annotation</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Retention</span><span class="o">(</span><span class="n">RetentionPolicy</span><span class="o">.</span><span class="na">RUNTIME</span><span class="o">)</span>
+</span><span class='line'><span class="nd">@Target</span><span class="o">({</span><span class="n">ElementType</span><span class="o">.</span><span class="na">TYPE</span><span class="o">})</span>
+</span><span class='line'><span class="kd">public</span> <span class="nd">@interface</span> <span class="n">Node</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">String</span> <span class="nf">jcrType</span><span class="o">()</span> <span class="k">default</span> <span class="s">&quot;nt:unstructured&quot;</span><span class="o">;</span>
+</span><span class='line'>    <span class="n">String</span> <span class="nf">jcrSuperTypes</span><span class="o">()</span> <span class="k">default</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+</span><span class='line'>    <span class="n">String</span> <span class="nf">jcrMixinTypes</span><span class="o">()</span> <span class="k">default</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+</span><span class='line'>    <span class="c1">// Define the extend setting in the mapping descriptor - Provide less flexibility if we use the java instrospection </span>
+</span><span class='line'>    <span class="n">Class</span> <span class="nf">extend</span><span class="o">()</span> <span class="k">default</span> <span class="n">Object</span><span class="o">.</span><span class="na">class</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Define the abstract setting in the mapping descriptor - Provide less flexibility if we use the java instrospection</span>
+</span><span class='line'>    <span class="kt">boolean</span> <span class="nf">isAbstract</span><span class="o">()</span> <span class="k">default</span> <span class="kc">false</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//   Define the inteface setting in the mapping descriptor - Provide less flexibility if we use the java instrospection</span>
+</span><span class='line'>    <span class="kt">boolean</span> <span class="nf">isInterface</span><span class="o">()</span> <span class="k">default</span> <span class="kc">false</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Discriminator is used when an object hierarchy tree is mapped into the same jcr node type</span>
+</span><span class='line'>    <span class="c1">// TODO : try to drop it from the mapping strategy. it should be hidden in the persistence manager impl.</span>
+</span><span class='line'>    <span class="kt">boolean</span> <span class="nf">discriminator</span><span class="o">()</span> <span class="k">default</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>使用例(XML)</h2>
+
+<figure class='code'><figcaption><span>XML</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;jackrabbit-ocm&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;class-descriptor</span>
+</span><span class='line'>        <span class="na">className=</span><span class="s">&quot;org.apache.jackrabbit.ocm.testmodel.Atomic&quot;</span> <span class="na">jcrType=</span><span class="s">&quot;nt:unstructured&quot;</span> <span class="na">discriminator=</span><span class="s">&quot;true&quot;</span> <span class="nt">&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;field-descriptor</span> <span class="na">fieldName=</span><span class="s">&quot;path&quot;</span> <span class="na">path=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;field-descriptor</span> <span class="na">fieldName=</span><span class="s">&quot;string&quot;</span> <span class="na">jcrName=</span><span class="s">&quot;string&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;field-descriptor</span> <span class="na">fieldName=</span><span class="s">&quot;booleanObject&quot;</span> <span class="na">jcrName=</span><span class="s">&quot;booleanObject&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>...
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>使用例(annotation)</h2>
+
+<figure class='code'><figcaption><span>Annotation</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Node</span><span class="o">(</span><span class="n">jcrType</span><span class="o">=</span><span class="s">&quot;ocm:page&quot;</span><span class="o">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="kc">false</span><span class="o">)</span>
+</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Page</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="nd">@Field</span><span class="o">(</span><span class="n">path</span><span class="o">=</span><span class="kc">true</span><span class="o">)</span> <span class="n">String</span> <span class="n">path</span><span class="o">;</span>
+</span><span class='line'>    <span class="nd">@Field</span><span class="o">(</span><span class="n">jcrName</span><span class="o">=</span><span class="s">&quot;ocm:title&quot;</span><span class="o">)</span> <span class="n">String</span> <span class="n">title</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Collection</span><span class="o">(</span><span class="n">collectionConverter</span><span class="o">=</span><span class="n">NTCollectionConverterImpl</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">jcrElementName</span><span class="o">=</span><span class="s">&quot;paragraph&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="n">List</span><span class="o">&lt;</span><span class="n">Paragraph</span><span class="o">&gt;</span> <span class="n">paragraphs</span><span class="o">;</span>
+</span><span class='line'><span class="o">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>discriminator</h2>
+
+<ul>
+<li>discriminatorフラグが真であれば、<code>ObjectConverterImpl.java#getObject</code>で、<code>className</code>に紐付けられたclass descriptorによってオブジェクトがインスタンス化される。偽であれば、ノードタイプに紐付けられたclass descriptorによってインスタンス化される。</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>ObjectConverterImpl.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="o">...</span>
+</span><span class='line'>    <span class="cm">/**</span>
+</span><span class='line'><span class="cm">     *</span>
+</span><span class='line'><span class="cm">     * @see org.apache.jackrabbit.ocm.manager.objectconverter.ObjectConverter#insert(javax.jcr.Session,</span>
+</span><span class='line'><span class="cm">     *      javax.jcr.Node, java.lang.String, java.lang.Object)</span>
+</span><span class='line'><span class="cm">     */</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">insert</span><span class="o">(</span><span class="n">Session</span> <span class="n">session</span><span class="o">,</span> <span class="n">Node</span> <span class="n">parentNode</span><span class="o">,</span> <span class="n">String</span> <span class="n">nodeName</span><span class="o">,</span> <span class="n">Object</span> <span class="n">object</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">ClassDescriptor</span> <span class="n">classDescriptor</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="na">getClassDescriptorByClass</span><span class="o">(</span><span class="n">object</span><span class="o">.</span><span class="na">getClass</span><span class="o">());</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="o">.....</span>
+</span><span class='line'>            <span class="c1">// If required, add the discriminator node type</span>
+</span><span class='line'>            <span class="c1">// discriminatorフラグがセットされていれば、</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">classDescriptor</span><span class="o">.</span><span class="na">hasDiscriminator</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                <span class="c1">// ocm_classnameをセット</span>
+</span><span class='line'>                <span class="n">addDiscriminatorProperty</span><span class="o">(</span><span class="n">object</span><span class="o">,</span> <span class="n">objectNode</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>           <span class="o">.....</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">addDiscriminatorProperty</span><span class="o">(</span><span class="n">Object</span> <span class="n">object</span><span class="o">,</span> <span class="n">Node</span> <span class="n">objectNode</span><span class="o">)</span>
+</span><span class='line'>            <span class="kd">throws</span> <span class="n">NoSuchNodeTypeException</span><span class="o">,</span> <span class="n">VersionException</span><span class="o">,</span>
+</span><span class='line'>            <span class="n">ConstraintViolationException</span><span class="o">,</span> <span class="n">LockException</span><span class="o">,</span> <span class="n">RepositoryException</span><span class="o">,</span>
+</span><span class='line'>            <span class="n">ValueFormatException</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>            <span class="c1">// beanクラス名をセット</span>
+</span><span class='line'>            <span class="n">objectNode</span><span class="o">.</span><span class="na">setProperty</span><span class="o">(</span><span class="n">ManagerConstant</span><span class="o">.</span><span class="na">DISCRIMINATOR_CLASS_NAME_PROPERTY</span><span class="o">,</span>
+</span><span class='line'>                    <span class="n">ReflectionUtils</span><span class="o">.</span><span class="na">getBeanClass</span><span class="o">(</span><span class="n">object</span><span class="o">).</span><span class="na">getName</span><span class="o">());</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="c1">// if it is not possible to add the CLASS_NAME_PROPERTY due to strong constraints in the</span>
+</span><span class='line'>            <span class="c1">// node type definition, try to add the Discriminator node type.</span>
+</span><span class='line'>            <span class="n">String</span> <span class="n">mixinTypeName</span><span class="o">;</span>
+</span><span class='line'>            <span class="n">mixinTypeName</span> <span class="o">=</span> <span class="n">ManagerConstant</span><span class="o">.</span><span class="na">DISCRIMINATOR_NODE_TYPE</span><span class="o">;</span>
+</span><span class='line'>            <span class="n">objectNode</span><span class="o">.</span><span class="na">addMixin</span><span class="o">(</span><span class="n">mixinTypeName</span><span class="o">);</span>
+</span><span class='line'>            <span class="n">objectNode</span><span class="o">.</span><span class="na">setProperty</span><span class="o">(</span><span class="n">ManagerConstant</span><span class="o">.</span><span class="na">DISCRIMINATOR_CLASS_NAME_PROPERTY</span><span class="o">,</span>
+</span><span class='line'>                    <span class="n">ReflectionUtils</span><span class="o">.</span><span class="na">getBeanClass</span><span class="o">(</span><span class="n">object</span><span class="o">).</span><span class="na">getName</span><span class="o">());</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'>    <span class="cm">/**</span>
+</span><span class='line'><span class="cm">     * @see org.apache.jackrabbit.ocm.manager.objectconverter.ObjectConverter#getObject(javax.jcr.Session,</span>
+</span><span class='line'><span class="cm">     *      java.lang.Class, java.lang.String)</span>
+</span><span class='line'><span class="cm">     */</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">Object</span> <span class="nf">getObject</span><span class="o">(</span><span class="n">Session</span> <span class="n">session</span><span class="o">,</span> <span class="n">String</span> <span class="n">path</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(!</span><span class="n">session</span><span class="o">.</span><span class="na">itemExists</span><span class="o">(</span><span class="n">path</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>                <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">requestObjectCache</span><span class="o">.</span><span class="na">isCached</span><span class="o">(</span><span class="n">path</span><span class="o">))</span>
+</span><span class='line'>            <span class="o">{</span>
+</span><span class='line'>                <span class="k">return</span> <span class="n">requestObjectCache</span><span class="o">.</span><span class="na">getObject</span><span class="o">(</span><span class="n">path</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">ClassDescriptor</span> <span class="n">classDescriptor</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>            <span class="n">Node</span> <span class="n">node</span> <span class="o">=</span> <span class="o">(</span><span class="n">Node</span><span class="o">)</span> <span class="n">session</span><span class="o">.</span><span class="na">getItem</span><span class="o">(</span><span class="n">path</span><span class="o">);</span>
+</span><span class='line'>            <span class="c1">// ocm_classname プロパティがあれば。。。</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">node</span><span class="o">.</span><span class="na">hasProperty</span><span class="o">(</span><span class="n">ManagerConstant</span><span class="o">.</span><span class="na">DISCRIMINATOR_CLASS_NAME_PROPERTY</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">String</span> <span class="n">className</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="na">getProperty</span><span class="o">(</span><span class="n">ManagerConstant</span><span class="o">.</span><span class="na">DISCRIMINATOR_CLASS_NAME_PROPERTY</span><span class="o">).</span><span class="na">getValue</span><span class="o">().</span><span class="na">getString</span><span class="o">();</span>
+</span><span class='line'>                <span class="c1">// class名に基づいたdescriptorを取得</span>
+</span><span class='line'>                <span class="n">classDescriptor</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="na">getClassDescriptorByClass</span><span class="o">(</span><span class="n">ReflectionUtils</span><span class="o">.</span><span class="na">forName</span><span class="o">(</span><span class="n">className</span><span class="o">));</span>
+</span><span class='line'>            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>                <span class="c1">// そうでなければ、node typeを基にdescriptorを取得</span>
+</span><span class='line'>                <span class="n">String</span> <span class="n">nodeType</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="na">getPrimaryNodeType</span><span class="o">().</span><span class="na">getName</span><span class="o">();</span>
+</span><span class='line'>                <span class="k">if</span> <span class="o">(</span><span class="n">nodeType</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">ManagerConstant</span><span class="o">.</span><span class="na">FROZEN_NODE_TYPE</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">nodeType</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="na">getProperty</span><span class="o">(</span><span class="n">ManagerConstant</span><span class="o">.</span><span class="na">FROZEN_PRIMARY_TYPE_PROPERTY</span><span class="o">).</span><span class="na">getString</span><span class="o">();</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>                <span class="n">classDescriptor</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="na">getClassDescriptorByNodeType</span><span class="o">(</span><span class="n">nodeType</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="kc">null</span> <span class="o">==</span> <span class="n">classDescriptor</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="k">throw</span> <span class="k">new</span> <span class="nf">JcrMappingException</span><span class="o">(</span><span class="s">&quot;Impossible to find the classdescriptor for &quot;</span> <span class="o">+</span> <span class="n">path</span>
+</span><span class='line'>                        <span class="o">+</span> <span class="s">&quot;. There is no discriminator and associated  JCR node type&quot;</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">Object</span> <span class="n">object</span> <span class="o">=</span> <span class="n">ReflectionUtils</span><span class="o">.</span><span class="na">newInstance</span><span class="o">(</span><span class="n">classDescriptor</span><span class="o">.</span><span class="na">getClassName</span><span class="o">());</span>
+</span><span class='line'><span class="o">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>例：Paragraphクラス</h3>
+
+<ul>
+<li>Paragraphクラスの定義では、discriminatorがfalseに設定されているので、オブジェクトをリポジトリから取得する場合は、<code>ocm:paragraph</code>タイプのdescriptor情報を基にインスタンス化される。</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>jcrmapping-sibling.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;class-descriptor</span> <span class="na">className=</span><span class="s">&quot;org.apache.jackrabbit.ocm.testmodel.Paragraph&quot;</span> <span class="na">jcrType=</span><span class="s">&quot;ocm:paragraph&quot;</span> <span class="na">discriminator=</span><span class="s">&quot;false&quot;</span> <span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;field-descriptor</span> <span class="na">fieldName=</span><span class="s">&quot;path&quot;</span> <span class="na">path=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;field-descriptor</span> <span class="na">fieldName=</span><span class="s">&quot;text&quot;</span> <span class="na">jcrName=</span><span class="s">&quot;ocm:text&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/class-descriptor&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>custom_nodetypes.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>  <span class="nt">&lt;nodeType</span> <span class="na">name=</span><span class="s">&quot;ocm:paragraph&quot;</span> <span class="na">isMixin=</span><span class="s">&quot;false&quot;</span> <span class="na">hasOrderableChildNodes=</span><span class="s">&quot;false&quot;</span> <span class="na">primaryItemName=</span><span class="s">&quot;&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;supertypes&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;supertype&gt;</span>mix:versionable<span class="nt">&lt;/supertype&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;supertype&gt;</span>nt:base<span class="nt">&lt;/supertype&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/supertypes&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;propertyDefinition</span> <span class="na">name=</span><span class="s">&quot;ocm:text&quot;</span> <span class="na">requiredType=</span><span class="s">&quot;String&quot;</span> <span class="na">autoCreated=</span><span class="s">&quot;false&quot;</span> <span class="na">mandatory=</span><span class="s">&quot;true&quot;</span> <span class="na">onParentVersion=</span><span class="s">&quot;COPY&quot;</span> <span class="na">protected=</span><span class="s">&quot;false&quot;</span> <span class="na">multiple=</span><span class="s">&quot;false&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/nodeType&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>implement-descriptor</h1>
+
+<figure class='code'><figcaption><span>implement-descriptor</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='dtd'><span class='line'><span class="k">&lt;!ATTLIST</span> <span class="nt">implement-descriptor</span>
+</span><span class='line'>    <span class="na">interfaceName</span> <span class="kc">CDATA</span> <span class="kc">#REQUIRED</span>   <span class="na">==</span><span class="o">|</span> <span class="na">フルパッケージ付きクラス名</span>
+</span><span class='line'><span class="k">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>例(XML)</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;class-descriptor</span> <span class="na">className=</span><span class="s">&quot;org.apache.jackrabbit.ocm.testmodel.auto.impl.CmsObjectImpl&quot;</span> <span class="na">jcrType=</span><span class="s">&quot;ocm:cmsobjectimpl&quot;</span>
+</span><span class='line'>                                   <span class="na">discriminator=</span><span class="s">&quot;false&quot;</span> <span class="na">abstract=</span><span class="s">&quot;true&quot;</span> <span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;implement-descriptor</span> <span class="na">interfaceName=</span><span class="s">&quot;org.apache.jackrabbit.ocm.testmodel.auto.CmsObject&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>      <br/>
+* <code>implement-descriptor</code>を持つ<code>CmsObjectImpl</code>のクラスシグネチャ。<code>CmsObject</code>インターフェースをimplementしている。</p>
+
+<figure class='code'><figcaption><span>CmsObjectImpl Signature</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Node</span><span class="o">(</span><span class="n">jcrType</span><span class="o">=</span><span class="s">&quot;ocm:cmsobjectimpl&quot;</span><span class="o">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="kc">false</span><span class="o">,</span> <span class="n">isAbstract</span><span class="o">=</span><span class="kc">true</span><span class="o">)</span>
+</span><span class='line'><span class="kd">public</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">CmsObjectImpl</span> <span class="kd">implements</span> <span class="n">CmsObject</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Field</span><span class="o">(</span><span class="n">path</span><span class="o">=</span><span class="kc">true</span><span class="o">)</span> <span class="kd">protected</span> <span class="n">String</span> <span class="n">path</span><span class="o">;</span>
+</span><span class='line'><span class="o">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>field-descriptor</h1>
+
+<figure class='code'><figcaption><span>field-descriptor</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='dtd'><span class='line'><span class="k">&lt;!ATTLIST</span> <span class="nt">field-descriptor</span>
+</span><span class='line'>    <span class="na">fieldName</span> <span class="kc">CDATA</span> <span class="kc">#REQUIRED</span>                  <span class="na">==</span><span class="o">|</span> <span class="na">フィールド名</span>
+</span><span class='line'>    <span class="na">jcrName</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>                     <span class="na">==</span><span class="o">|</span> <span class="na">JCRプロパティ名。省略された場合はfieldNameが使用される</span>
+</span><span class='line'>    <span class="na">id</span> <span class="o">(</span><span class="na">true</span> <span class="o">|</span> <span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>                  <span class="na">==</span><span class="o">|</span> <span class="na">本フィールドがIdならば真</span>
+</span><span class='line'>    <span class="na">path</span> <span class="o">(</span><span class="na">true</span> <span class="o">|</span> <span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>                <span class="na">==</span><span class="o">|</span> <span class="na">本フィールドがノードのpathを示しているのであれば真</span>
+</span><span class='line'>    <span class="na">uuid</span> <span class="o">(</span><span class="na">true</span> <span class="o">|</span> <span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>                <span class="na">==</span><span class="o">|</span> <span class="na">本フィールドがUUIDを示しているのであれば真。JCR2.0ではUUIDの使用は非推奨</span>
+</span><span class='line'>    <span class="na">converter</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>                   <span class="na">==</span><span class="o">|</span> <span class="na">AtomicTypeConvertクラス名。指定されなければフィールドタイプの標準コンバータを使用</span>
+</span><span class='line'>    <span class="na">jcrDefaultValue</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>             <span class="na">==</span><span class="o">|</span> <span class="na">フィールドがnullの場合に用いられる規定値</span>
+</span><span class='line'>    <span class="na">jcrValueConstraints</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>         <span class="na">==</span><span class="o">|</span> <span class="na">カンマ区切りの許容される値のリスト</span>
+</span><span class='line'>    <span class="na">jcrType</span> <span class="o">(</span><span class="na">String</span> <span class="o">|</span> <span class="na">Date</span> <span class="o">|</span> <span class="na">Long</span> <span class="o">|</span> <span class="na">Doube</span> <span class="o">|</span> <span class="na">Boolean</span> <span class="o">|</span> <span class="na">Binary</span><span class="o">)</span> <span class="kc">#IMPLIED</span> <span class="na">==</span><span class="o">|</span> <span class="na">JCRプロパティタイプ、オプション</span>
+</span><span class='line'>    <span class="na">jcrAutoCreated</span> <span class="o">(</span><span class="na">true</span> <span class="o">|</span> <span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>      <span class="na">==</span><span class="o">|</span> <span class="na">親オブジェクトインスタンス生成時に自動作成されるか否か</span>
+</span><span class='line'>    <span class="na">jcrMandatory</span> <span class="o">(</span><span class="na">true</span> <span class="o">|</span> <span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>        <span class="na">==</span><span class="o">|</span> <span class="na">JCRプロパティが必須かどうか</span>
+</span><span class='line'>    <span class="na">jcrOnParentVersion</span> <span class="o">(</span><span class="na">COPY</span> <span class="o">|</span> <span class="na">VERSION</span> <span class="o">|</span> <span class="na">INITIALIZE</span> <span class="o">|</span> <span class="na">COMPUTE</span> <span class="o">|</span> <span class="na">IGNORE</span> <span class="o">|</span> <span class="na">ABORT</span><span class="o">)</span> <span class="s2">&quot;COPY&quot;</span> <span class="na">==</span><span class="o">|</span> <span class="na">親オブジェクトがバージョン管理され場合の振舞い</span>
+</span><span class='line'>    <span class="na">jcrProtected</span> <span class="o">(</span><span class="na">true</span> <span class="o">|</span> <span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>        <span class="na">==</span><span class="o">|</span> <span class="na">このJCRノードプロパティが保護されるか否か</span>
+</span><span class='line'>    <span class="na">jcrMultiple</span> <span class="o">(</span><span class="na">true</span> <span class="o">|</span> <span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>         <span class="na">==</span><span class="o">|</span> <span class="na">このJCRノードプロパティが複数値を取れるか否か</span>
+</span><span class='line'><span class="k">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>bean-descriptor</h1>
+
+<figure class='code'><figcaption><span>bean-descriptor </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='dtd'><span class='line'><span class="k">&lt;!ELEMENT</span> <span class="nt">bean-descriptor</span> <span class="kc">EMPTY</span><span class="k">&gt;</span>
+</span><span class='line'><span class="k">&lt;!ATTLIST</span> <span class="nt">bean-descriptor</span>
+</span><span class='line'>    <span class="na">fieldName</span> <span class="kc">CDATA</span> <span class="kc">#REQUIRED</span>              <span class="na">==</span><span class="o">|</span> <span class="na">フィールド名</span>
+</span><span class='line'>    <span class="na">jcrName</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>                 <span class="na">==</span><span class="o">|</span> <span class="na">JCRノード名。省略された場合はfieldNameが用いられる。</span>
+</span><span class='line'>    <span class="na">proxy</span> <span class="o">(</span><span class="na">true</span> <span class="o">|</span> <span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>           <span class="na">==</span><span class="o">|</span> <span class="na">真の場合、親オブジェクトのインスタンス化時にはロードされず、アクセス時に初めてローディングされる。</span>
+</span><span class='line'>    <span class="na">autoRetrieve</span> <span class="o">(</span><span class="na">true</span><span class="o">|</span><span class="na">false</span><span class="o">)</span> <span class="s2">&quot;true&quot;</span>       <span class="na">==</span><span class="o">|</span> <span class="na">偽の場合、親オブジェクトが取得された場合にもこのdescriptorを持つbeanは取得されない。</span>
+</span><span class='line'>    <span class="na">autoUpdate</span> <span class="o">(</span><span class="na">true</span><span class="o">|</span><span class="na">false</span><span class="o">)</span> <span class="s2">&quot;true&quot;</span>         <span class="na">==</span><span class="o">|</span> <span class="na">偽の場合、親オブジェクトが更新された場合にも更新されない。</span>
+</span><span class='line'>    <span class="na">autoInsert</span> <span class="o">(</span><span class="na">true</span><span class="o">|</span><span class="na">false</span><span class="o">)</span> <span class="s2">&quot;true&quot;</span>         <span class="na">==</span><span class="o">|</span> <span class="na">偽の場合、親オブジェクトが挿入された場合にも更新されない。</span>
+</span><span class='line'>    <span class="na">converter</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>               <span class="na">==</span><span class="o">|</span> <span class="na">Converterクラスの古パッケージクラス名。規定値はObjectConverterImpl。</span>
+</span><span class='line'>    <span class="na">jcrType</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>                 <span class="na">==</span><span class="o">|</span> <span class="na">ノードタイプ。オプション。規定値はnt:unstructured</span>
+</span><span class='line'>    <span class="na">jcrAutoCreated</span> <span class="o">(</span><span class="na">true</span> <span class="o">|</span> <span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>  <span class="na">==</span><span class="o">|</span> <span class="na">親オブジェクトが作成された際に自動的に作成されるかどうか。JCR2.0</span> <span class="na">3.7.2.3</span>
+</span><span class='line'>    <span class="na">jcrMandatory</span> <span class="o">(</span><span class="na">true</span> <span class="o">|</span> <span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>    <span class="na">==</span><span class="o">|</span> <span class="na">親オブジェクトがsaveされる前に作成されていなければならない。JCR2.0</span> <span class="na">3.7.2.4</span>
+</span><span class='line'>    <span class="na">jcrOnParentVersion</span> <span class="o">(</span><span class="na">COPY</span> <span class="o">|</span> <span class="na">VERSION</span> <span class="o">|</span> <span class="na">INITIALIZE</span> <span class="o">|</span> <span class="na">COMPUTE</span> <span class="o">|</span> <span class="na">IGNORE</span> <span class="o">|</span> <span class="na">ABORT</span><span class="o">)</span> <span class="s2">&quot;COPY&quot;</span> <span class="na">==</span><span class="o">|</span> <span class="na">親オブジェクトがバージョン管理された場合の振舞い。</span>
+</span><span class='line'>    <span class="na">jcrProtected</span> <span class="o">(</span><span class="na">true</span> <span class="o">|</span> <span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>    <span class="na">==</span><span class="o">|</span> <span class="na">真の場合、削除不可、子要素は挿入、削除、順序変更不可、プロパティ追加削除不可、既存のpロパティ値の変更不可、主ノードタイプの変更不可、mixinノードタイプの追加削除不可。</span> <span class="na">3.7.2.2</span>
+</span><span class='line'>    <span class="na">jcrSameNameSiblings</span> <span class="o">(</span><span class="na">true</span> <span class="o">|</span> <span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span> <span class="na">==</span><span class="o">|</span> <span class="na">同名ノードの許可。3.1.3.1</span>
+</span><span class='line'><span class="k">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>collection-descriptor</h1>
+
+<figure class='code'><figcaption><span>collection-descriptor</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='dtd'><span class='line'><span class="k">&lt;!ATTLIST</span> <span class="nt">collection-descriptor</span>
+</span><span class='line'>    <span class="na">fieldName</span> <span class="kc">CDATA</span> <span class="kc">#REQUIRED</span>             <span class="na">==</span><span class="o">|</span> <span class="na">フィールド名。この値は一部のconverterでのみ用いられる。</span>
+</span><span class='line'>    <span class="na">jcrName</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>                <span class="na">==</span><span class="o">|</span> <span class="na">JCRプロパティ名。指定されない場合はfieldNameが用いられる。</span>
+</span><span class='line'>    <span class="na">proxy</span> <span class="o">(</span><span class="na">true</span> <span class="o">|</span> <span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>          <span class="na">==</span><span class="o">|</span> <span class="na">真の場合、遅延ローディングされ、親オブジェクトの生成時にはロードされない。</span>
+</span><span class='line'>    <span class="na">autoRetrieve</span> <span class="o">(</span><span class="na">true</span><span class="o">|</span><span class="na">false</span><span class="o">)</span> <span class="s2">&quot;true&quot;</span>      <span class="na">==</span><span class="o">|</span> <span class="na">偽の場合、親オブジェクトが取得された時点でも取得されない。</span>
+</span><span class='line'>    <span class="na">autoUpdate</span> <span class="o">(</span><span class="na">true</span><span class="o">|</span><span class="na">false</span><span class="o">)</span> <span class="s2">&quot;true&quot;</span>        <span class="na">==</span><span class="o">|</span> <span class="na">偽の場合、親オブジェクトが更新されても更新されない。</span>
+</span><span class='line'>    <span class="na">autoInsert</span> <span class="o">(</span><span class="na">true</span><span class="o">|</span><span class="na">false</span><span class="o">)</span> <span class="s2">&quot;true&quot;</span>        <span class="na">==</span><span class="o">|</span> <span class="na">偽の場合、親オブジェクトが挿入されても挿入されない。</span>
+</span><span class='line'>    <span class="na">elementClassName</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>       <span class="na">==</span><span class="o">|</span> <span class="na">永続コレクションの要素クラスのフルパッケージ名。</span>
+</span><span class='line'>    <span class="na">collectionClassName</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>    <span class="na">==</span><span class="o">|</span> <span class="na">Java</span> <span class="na">Collectionクラスのフルパッケージクラス名。</span>
+</span><span class='line'>    <span class="na">collectionConverter</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>    <span class="na">==</span><span class="o">|</span> <span class="na">コレクションマッピングストラテジーを制御する、converterのクラス名。規定値はDefaultCollectionConverterImpl。</span>
+</span><span class='line'>    <span class="na">jcrElementName</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>         <span class="na">==</span><span class="o">|</span> <span class="na">コレクションの個々の要素に割り当てたいJCRノード名</span>
+</span><span class='line'>    <span class="na">jcrType</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>                <span class="na">==</span><span class="o">|</span> <span class="na">コレクション要素のJCRタイプ。</span>
+</span><span class='line'>    <span class="na">jcrAutoCreated</span> <span class="o">(</span><span class="na">true</span> <span class="o">|</span> <span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span> <span class="na">==</span><span class="o">|</span> <span class="na">親オブジェクト生成時に自動生成されるか</span>
+</span><span class='line'>    <span class="na">jcrMandatory</span> <span class="o">(</span><span class="na">true</span> <span class="o">|</span> <span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>   <span class="na">==</span><span class="o">|</span> <span class="na">親オブジェクトがsaveされる前に存在していなければならないかどうか</span>
+</span><span class='line'>    <span class="na">jcrOnParentVersion</span> <span class="o">(</span><span class="na">COPY</span> <span class="o">|</span> <span class="na">VERSION</span> <span class="o">|</span> <span class="na">INITIALIZE</span> <span class="o">|</span> <span class="na">COMPUTE</span> <span class="o">|</span> <span class="na">IGNORE</span> <span class="o">|</span> <span class="na">ABORT</span><span class="o">)</span> <span class="s2">&quot;COPY&quot;</span> <span class="na">==</span><span class="o">|</span> <span class="na">親オブジェクトがバージョン管理された場合の振舞い。</span>
+</span><span class='line'>    <span class="na">jcrProtected</span> <span class="o">(</span><span class="na">true</span> <span class="o">|</span> <span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>  <span class="na">==</span><span class="o">|</span> <span class="na">このコレクションが保護されるかどうか。</span>
+</span><span class='line'>    <span class="na">jcrSameNameSiblings</span> <span class="o">(</span><span class="na">true</span> <span class="o">|</span> <span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>  <span class="na">==</span><span class="o">|</span> <span class="na">同名を許可するか否か</span>
+</span><span class='line'><span class="k">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>Converter</h1>
+
+<h2>Atomic</h2>
+
+<div><script src='https://gist.github.com/2822695.js?file='></script>
+<noscript><pre><code>@Node
+public class Atomic
+{   
+    @Field(path=true) protected String path;
+    @Field private String string;
+    @Field private Boolean booleanObject;
+    @Field private boolean booleanPrimitive;
+    @Field private Integer integerObject;
+    @Field private int intPrimitive;
+    @Field private byte[] byteArray;
+    @Field private Calendar calendar;
+    @Field private Date date;
+    @Field private Double doubleObject;
+    @Field private double doublePrimitive;
+    @Field private InputStream inputStream;
+    @Field private Timestamp timestamp;
+    
+    @Field (converter = Int2BooleanTypeConverterImpl.class)
+    private boolean int2boolean;
+
+    @Field (converter = NameTypeConverterImpl.class)
+    private String namedProperty;
+
+    @Field (converter = PathTypeConverterImpl.class)
+    private String pathProperty; // used to refer another node
+
+    @Field (converter = UndefinedTypeConverterImpl.class)
+    private Object undefinedProperty;
+</code></pre></noscript></div>
+
+
+<h2>Atomic Type Converter</h2>
+
+<h3>インターフェース</h3>
+
+<p> <div><script src='https://gist.github.com/2822741.js?file='></script>
+<noscript><pre><code>package org.apache.jackrabbit.ocm.manager.atomictypeconverter;</p>
+
+<p>import javax.jcr.Value;
+import javax.jcr.ValueFactory;</p>
+
+<p>/<em>*
+ *
+ * AtomicTypeConverter interface.
+ *
+ * The Object converter used atomic type converters to map atomic fields to JCR Value objects.
+ * Amotic fields are primitive java types and their wrapper classes.
+ *
+ *
+ * @author &lt;a href=&quot;mailto:christophe.lombart@sword-technologies.com&quot;&gt;Christophe Lombart&lt;/a&gt;
+ * @author &lt;a href='mailto:the_mindstorm[at]evolva[dot]ro'&gt;Alexandru Popescu&lt;/a&gt;
+ </em>/
+public interface AtomicTypeConverter
+{</p>
+
+<pre><code>/**
+ * Convert an object into a JCR value.
+ *
+ * @param valueFactory The JCR ValueFactory
+ * @param object The object to convert
+ * @return the corresponding JCR value
+ *
+ */
+public Value getValue(ValueFactory valueFactory, Object object);
+
+/**
+ * Convert a jcr property value into an object
+ *
+ * @param value The JCR property value
+ * @return the corresponding object 
+ */
+public Object getObject(Value value);
+
+/**
+ * Get the string converted value. This is mainly used to build xpath expressions
+ *
+ * @param valueFactory The JCR ValueFactory
+ * @param object The object value
+ * @return The string converted value   
+ */
+public String getXPathQueryValue(ValueFactory valueFactory, Object object);
+</code></pre>
+
+<p>}
+</code></pre></noscript></div></p>
+
+<h3>実装例</h3>
+
+<p> <div><script src='https://gist.github.com/2822770.js?file='></script>
+<noscript><pre><code>package org.apache.jackrabbit.ocm.manager.atomictypeconverter.impl;</p>
+
+<p>import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
+import javax.jcr.ValueFactory;</p>
+
+<p>import org.apache.jackrabbit.ocm.exception.IncorrectAtomicTypeException;
+import org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverter;</p>
+
+<p>/<em>*
+ *
+ *  Name Type Converter
+ *
+ * @author &lt;a href=&quot;mailto:christophe.lombart@gmail.com&quot;&gt;Christophe Lombart&lt;/a&gt;
+ *
+ </em>/
+public class PathTypeConverterImpl implements AtomicTypeConverter
+{</p>
+
+<pre><code>/**
+ *
+ * @see org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverter#getValue(java.lang.Object)
+ */
+public Value getValue(ValueFactory valueFactory, Object propValue)
+{
+    try
+    {
+        if (propValue == null)
+        {
+            return null;
+        }
+        return valueFactory.createValue((String) propValue, PropertyType.PATH);
+    }
+    catch (RepositoryException e)
+    {
+        throw new IncorrectAtomicTypeException(&amp;quot;Impossible to convert the value into a path property : &amp;quot; + propValue.toString() + &amp;quot;. Check if it is a valid path.&amp;quot;, e);
+    }
+
+}
+
+/**
+ *
+ * @see org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverter#getObject(javax.jcr.Value)
+ */
+public Object getObject(Value value)
+{
+    try
+    {
+        return value.getString();
+    }
+    catch (RepositoryException e)
+    {
+        throw new IncorrectAtomicTypeException(&amp;quot;Impossible to convert the path into a string&amp;quot;, e);
+    }
+
+}
+
+/**
+ *
+ * @see org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverter#getStringValue(java.lang.Object)
+ */
+public String getXPathQueryValue(ValueFactory valueFactory, Object object)
+{
+    return &amp;quot;'&amp;quot; + object.toString() + &amp;quot;'&amp;quot;;
+}
+</code></pre>
+
+<p>}
+</code></pre></noscript></div></p>
+
+<h2>Bean Converter</h2>
+
+<p> <div><script src='https://gist.github.com/2829877.js?file='></script>
+<noscript><pre><code>package org.apache.jackrabbit.ocm.manager.beanconverter;</p>
+
+<p>import javax.jcr.Node;
+import javax.jcr.Session;</p>
+
+<p>import org.apache.jackrabbit.ocm.exception.JcrMappingException;
+import org.apache.jackrabbit.ocm.exception.ObjectContentManagerException;
+import org.apache.jackrabbit.ocm.exception.RepositoryException;
+import org.apache.jackrabbit.ocm.manager.beanconverter.impl.ParentBeanConverterImpl;
+import org.apache.jackrabbit.ocm.mapper.model.BeanDescriptor;
+import org.apache.jackrabbit.ocm.mapper.model.ClassDescriptor;</p>
+
+<p>/<em>*
+ * Interface describing a custom bean converter.
+ *
+ * @author &lt;a href='mailto:the_mindstorm[at]evolva[dot]ro'&gt;Alexandru Popescu&lt;/a&gt;
+ </em>/
+public interface BeanConverter {</p>
+
+<pre><code>/**
+ * Insert the object.
+ *
+ * @param session the JCR session
+ * @param parentNode The node which will contain the converter bean
+ * @param beanDescriptor The bean descriptor
+ * @param beanClassDescriptor the Class Descriptor associated to the bean to insert
+ * @param bean the bean to convert( insert into the JCR structure)
+ * @param parentClassDescriptor The Class Descriptor associated to the parent object
+ * @param parent the object which will contain the bean to convert
+ *
+ * @throws ObjectContentManagerException thrown in case the insert fails; marks a failure due to logic of
+ *  the insert (parent node cannot be accessed, the insert fails, etc.)
+ * @throws RepositoryException thrown in case the underlying repository has thrown a
+ *  &amp;lt;code&amp;gt;javax.jcr.RepositoryException&amp;lt;/code&amp;gt; that is not possible to be handled or
+ *  wrapped in ObjectContentManagerException; marks a repository failure
+ * @throws JcrMappingException throws in case the mapping of the bean is not correct
+ */
+void insert(Session session, Node parentNode, BeanDescriptor beanDescriptor, ClassDescriptor beanClassDescriptor, Object bean, ClassDescriptor parentClassDescriptor, Object parent)
+throws ObjectContentManagerException, RepositoryException, JcrMappingException;
+
+/**
+ * Update repository from bean values.
+ *
+ * @param session the JCR session
+ * @param parentNode The node which will contain the converter bean
+ * @param beanDescriptor The bean descriptor
+ * @param beanClassDescriptor the Class Descriptor associated to the bean to update
+ * @param bean the bean to convert( insert into the JCR structure)
+ * @param parentClassDescriptor The Class Descriptor associated to the parent object
+ * @param parent the object which will contain the bean to convert
+ *
+ * @throws ObjectContentManagerException thrown in case the update fails; marks a failure due to logic
+ *  of update (parent node cannot be accessed, the update fails, etc.)
+ * @throws RepositoryException thrown in case the underlying repository has thrown a
+ *  &amp;lt;code&amp;gt;javax.jcr.RepositoryException&amp;lt;/code&amp;gt; that is not possible to be handled or
+ *  wrapped in ObjectContentManagerException; marks a repository failure
+ * @throws JcrMappingException throws in case the mapping of the bean is not correct
+ */
+void update(Session session, Node parentNode, BeanDescriptor beanDescriptor, ClassDescriptor beanClassDescriptor, Object bean, ClassDescriptor parentClassDescriptor, Object parent)
+throws ObjectContentManagerException, RepositoryException, JcrMappingException;
+
+/**
+ * Retrieve a bean from the repository.
+ *
+ * @param session the JCR session
+ * @param parentNode The parent node
+ * @param beanDescriptor The bean descriptor
+ * @param beanClassDescriptor the Class Descriptor associated to the bean to insert
+ * @param beanClass The bean Class
+ * @param parent The parent which contain the bean to retrieve
+ *
+ * @throws ObjectContentManagerException thrown in case the bean cannot be retrieved or initialized;
+ *  marks a failure due to logic of retrieval
+ * @throws RepositoryException thrown in case the underlying repository has thrown a
+ *  &amp;lt;code&amp;gt;javax.jcr.RepositoryException&amp;lt;/code&amp;gt; that is not possible to be handled or
+ *  wrapped in ObjectContentManagerException; marks a repository failure
+ * @throws JcrMappingException throws in case the mapping of the bean is not correct
+ */
+Object getObject(Session session, Node parentNode, BeanDescriptor beanDescriptor, ClassDescriptor beanClassDescriptor, Class beanClass, Object parent)
+throws ObjectContentManagerException, RepositoryException, JcrMappingException;
+
+
+/**
+ * Remove the bean from the repository.
+ *
+ * @param session the JCR session
+ * @param parentNode The node which will contain the converter bean
+ * @param beanDescriptor The bean descriptor
+ * @param beanClassDescriptor the Class Descriptor associated to the bean to update
+ * @param bean the bean to convert( insert into the JCR structure)
+ * @param parentClassDescriptor The Class Descriptor associated to the parent object
+ * @param parent the object which contains the bean to convert
+ *
+ * @throws ObjectContentManagerException thrown in case the bean cannot be removed;
+ *  marks a failure due to logic of removal
+ * @throws RepositoryException thrown in case the underlying repository has thrown a
+ *  &amp;lt;code&amp;gt;javax.jcr.RepositoryException&amp;lt;/code&amp;gt; that is not possible to be handled or
+ *  wrapped in ObjectContentManagerException; marks a repository failure
+ * @throws JcrMappingException throws in case the mapping of the bean is not correct
+ */
+void remove(Session session, Node parentNode,  BeanDescriptor beanDescriptor, ClassDescriptor beanClassDescriptor, Object bean, ClassDescriptor parentClassDescriptor, Object parent)
+throws ObjectContentManagerException, RepositoryException, JcrMappingException;
+
+/**
+ * Get the bean path.
+ *
+ * When the bean is mapped to a subnode, the bean path is the parent node path + the jcrname of the current bean.
+ * Sometime a BeanConverter can be used to access to a bean which is not mapped to a subnode. In this case,
+ * another implementation can be provided in this method getPath. {@link  ParentBeanConverterImpl} is a good example.
+ *
+ * @param session the JCR session
+ * @param beanDescriptor The descriptor of the bean to convert
+ * @param parentNode the node which contain this bean (its corresponfing subnode)
+ * @return the bean path
+ *
+ * @throws RepositoryException thrown in case the underlying repository has thrown a
+ *  &amp;lt;code&amp;gt;javax.jcr.RepositoryException&amp;lt;/code&amp;gt; that is not possible to be handled or
+ *  wrapped in ObjectContentManagerException; marks a repository failure
+ *
+ */
+String getPath(Session session, BeanDescriptor beanDescriptor, Node parentNode)
+throws ObjectContentManagerException;
+</code></pre>
+
+<p>}
+</code></pre></noscript></div></p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/05/28/jackrabbit-ocm/">Jackrabbit OCM</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-05-28T15:33:00-07:00" pubdate data-updated="true">05/28/2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><a href="http://jackrabbit.apache.org/object-content-mapping.html">Jackrabbit OCM</a>より抄訳。</p>
+
+<h1>概要</h1>
+
+<ul>
+<li>Jackrabbit OCMは、コンテンツリポジトリである<a href="http://jcp.org/en/jsr/detail?id=283">JCR</a>をバックエンドとした、オブジェクト・パーシステンス・フレームワークである。</li>
+<li><a href="http://goo.gl/37r7v">関連</a>、<a href="http://goo.gl/OIbxv">インヘリタンス</a>、<a href="http://goo.gl/Zp8ei">ポリモーフィズム</a>、<a href="http://goo.gl/pfldW">コンポジション</a>、<a href="http://goo.gl/LWTef">Javaコレクションフレームワーク</a>をサポートする。</li>
+<li>JCRの機能を活用した、バージョンサポートを提供。</li>
+<li>オブジェクトロック</li>
+<li>Javaベースのcriteria、またはJCRクエリ言語によるクエリサポート</li>
+<li>JCR準拠リポジトリ上で、例えばフォーラムアプリケーションであれば、<code>Forum</code>, <code>Topic</code>, <code>Post</code>といったオブジェクトをPOJOとして表現し、JCRマッピングツールを用いて永続化することができる。</li>
+</ul>
+
+
+<h1>なぜOCMが必要なのか</h1>
+
+<ul>
+<li>UIへの表示など、単純なユースケースではJCRのノードとプロパティのモデルは非常に便利だが、ビジネスロジックを記述する量が増えてくるとJCR APIでは低レベルすぎ、POJOレベルで扱うほうが適しているから。</li>
+<li>OCMフレームワークはコンテンツを永続化するための高レベルインターフェースを提供し、JCR APIへの依存性を低めることができる。</li>
+<li>OJBやHibernateなどのORMツールは、コンテンツ指向のアプリケーションには適していない。</li>
+</ul>
+
+
+<h1>Object Content Manager</h1>
+
+<ul>
+<li>OCMフレームワークの主要コンポーネント。</li>
+<li>ObjectContentManagerはオブジェクトグラフをJCRノードとプロパティに変換、またはその逆を行う。</li>
+<li>ObjectContentManagerはJCR Sessionインスタンスと関連付けられている。</li>
+<li>JCRリポジトリに対するオブジェクトの取得、作成、更新、削除を行うことができる。</li>
+<li>通常、１ユーザーセッションに対して１つのObjectContentManagerインスタンスが存在する。</li>
+</ul>
+
+
+<h2>Object Content Managerの動作原理</h2>
+
+<ul>
+<li>Mapping Descriptorが、それぞれのPOJOをどのようにマッピングして永続化するかをObjectContentManagerに指示する。</li>
+<li>永続クラスごとに、Class Descriptorが用意され、クラス属性のマッピング情報を保持する。</li>
+<li>Mapping Descriptorの実装として、下記の二種類が今のところ提供されている。
+
+<ul>
+<li>Annotation: 永続クラスにマッピング情報がアノテーションとして記述されている。(org.apache.jackrabbit.ocm.mapper.impl.annotation.AnnotationMapperImpl)</li>
+<li>XML: Class DescriptorはXMLとしても記述可能。(org.apache.jackrabbit.ocm.mapper.impl.digester.DigesterMapperImpl)</li>
+</ul>
+</li>
+<li>ユーザーはObjectContentManagerがClass Descriptorをどのように利用しているかを理解する必要はなく、XMLかクラスのアノテーションか、どちらの方法で記述するかさえ決めれば良い。</li>
+</ul>
+
+
+<h2>オブジェクトはどのようにJCRリポジトリへ保存されるのか</h2>
+
+<ul>
+<li>永続オブジェクトはJCRノードにマップされ、フィールドは種類によりサブノードかプロパティにマップされる。フィールドタイプには３種類ある。
+
+<ul>
+<li>アトミックフィールド: PrimitiveタイプとString, Long, Doubleなどのシンプルなオブジェクト。これらのフィールドはJCRプロパティにマップされる。</li>
+<li>Beanフィールド: クラスは他のBeanと1対1の関連を持つことができる。この場合、フィールドはカスタムオブジェクトである。このオブジェクトのフィールドはJCRサブノードか参照ノードとしてマップされる。</li>
+<li>コレクションフィールド: クラスはBeanのコレクション（かMap）に対して1対多の関連を持つことができる。これらのフィールドはJCRサブノードのコレクションか、参照ノードのコレクションにマップされる。また、あるJavaコレクションを、マルチバリューのプロパティにマップすることも可能である。</li>
+</ul>
+</li>
+</ul>
+
+
+<p>Mapping Descriptorは継承、インターフェースマッピングストラテジー、遅延ローディング、カスタムコンバーター、キャッシュステラテジーについての情報も含んでいる。</p>
+
+<h2>アノテーション永続クラスによる基本設定</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">import</span> <span class="nn">javax.jcr.Session</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">javax.jcr.Repository</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">import</span> <span class="nn">org.apache.jackrabbit.ocm.manager.impl.ObjectContentManagerImpl</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">org.apache.jackrabbit.ocm.mapper.Mapper</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">org.apache.jackrabbit.ocm.mapper.impl.annotation.AnnotationMapperImpl</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 1. JCR sessionのインスタンス化</span>
+</span><span class='line'><span class="n">Repository</span> <span class="n">repository</span> <span class="o">=</span> <span class="o">...;</span>
+</span><span class='line'><span class="n">Session</span> <span class="n">session</span> <span class="o">=</span> <span class="n">repository</span><span class="o">.</span><span class="na">login</span><span class="o">(...);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 2. 複数の永続クラスを登録する</span>
+</span><span class='line'><span class="n">List</span> <span class="n">classes</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">();</span>
+</span><span class='line'><span class="n">classes</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">MyContent</span><span class="o">.</span><span class="na">class</span><span class="o">);</span> <span class="c1">// それぞれの永続クラスに対してこのメソッドを呼び出す</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 3. Object Content Managerのインスタンス化</span>
+</span><span class='line'><span class="n">Mapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AnnotationMapperImpl</span><span class="o">(</span><span class="n">classes</span><span class="o">);</span>
+</span><span class='line'><span class="n">ObjectContentManager</span> <span class="n">ocm</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ObjectContentManagerImpl</span><span class="o">(</span><span class="n">session</span><span class="o">,</span> <span class="n">mapper</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>XMLでMapping Descriptorを定義した場合の基本設定</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">import</span> <span class="nn">javax.jcr.Session</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">javax.jcr.Repository</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">import</span> <span class="nn">org.apache.jackrabbit.ocm.mapper.Mapper</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">org.apache.jackrabbit.ocm.mapper.impl.digester.DigesterMapperImpl</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">org.apache.jackrabbit.ocm.manager.ObjectContentManager</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">org.apache.jackrabbit.ocm.manager.impl.ObjectContentManagerImpl</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverterProvider</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">org.apache.jackrabbit.ocm.manager.atomictypeconverter.impl.DefaultAtomicTypeConverterProvider</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">org.apache.jackrabbit.ocm.manager.objectconverter.ObjectConverter</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">org.apache.jackrabbit.ocm.manager.objectconverter.impl.ObjectConverterImpl</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">org.apache.jackrabbit.ocm.query.QueryManager</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">org.apache.jackrabbit.ocm.query.impl.QueryManagerImpl</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 1. JCR Sessionのインスタンス化</span>
+</span><span class='line'><span class="n">Repository</span> <span class="n">repository</span> <span class="o">=</span> <span class="o">...;</span>
+</span><span class='line'><span class="n">Session</span> <span class="n">session</span> <span class="o">=</span> <span class="n">repository</span><span class="o">.</span><span class="na">login</span><span class="o">(...);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 2. 複数のマッピングファイルを定義</span>
+</span><span class='line'><span class="n">String</span><span class="o">[]</span> <span class="n">files</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>      <span class="s">&quot;./src/test-config/jcrmapping.xml&quot;</span><span class="o">,</span>
+</span><span class='line'>      <span class="s">&quot;./src/test-config/jcrmapping-atomic.xml&quot;</span><span class="o">,</span>
+</span><span class='line'>      <span class="s">&quot;./src/test-config/jcrmapping-beandescriptor.xml&quot;</span>
+</span><span class='line'>  <span class="o">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 3. object content managerのインスタンス化</span>
+</span><span class='line'><span class="n">ObjectContentManager</span> <span class="n">ocm</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ObjectContentManagerImpl</span><span class="o">(</span><span class="n">session</span><span class="o">,</span> <span class="n">files</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>OCMの基本操作</h1>
+
+<ul>
+<li>下記の例では、Folderクラスは永続クラスで、アノテーションかXMLでclass descriptorが定義されているものとする。</li>
+</ul>
+
+
+<h2>インサート</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Folder</span> <span class="n">folder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Folder</span><span class="o">();</span>
+</span><span class='line'><span class="n">folder</span><span class="o">.</span><span class="na">setPath</span><span class="o">(</span><span class="s">&quot;/myfolder&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">folder</span><span class="o">.</span><span class="na">set</span><span class="o">...();</span> <span class="c1">// setterメソッドを呼んで値を設定</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">insert</span><span class="o">(</span><span class="n">folder</span><span class="o">);</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">save</span><span class="o">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>オブジェクトの取得と更新</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Folder</span> <span class="n">folder</span> <span class="o">=</span> <span class="o">(</span><span class="n">Folder</span><span class="o">)</span> <span class="n">ocm</span><span class="o">.</span><span class="na">getObject</span><span class="o">(</span><span class="n">Folder</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="s">&quot;/myfolder&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">folder</span><span class="o">.</span><span class="na">set</span><span class="o">...();</span> <span class="c1">// setterで値を更新</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">update</span><span class="o">(</span><span class="n">folder</span><span class="o">);</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">save</span><span class="o">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>オブジェクトの削除</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="s">&quot;/myfolder&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">save</span><span class="o">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>OCMの検索</h1>
+
+<ul>
+<li>下記の例で用いられる永続クラス Paragraph.java</li>
+</ul>
+
+
+<div><script src='https://gist.github.com/2822124.js?file='></script>
+<noscript><pre><code>package org.apache.jackrabbit.ocm.testmodel;
+
+import org.apache.jackrabbit.ocm.manager.beanconverter.impl.ParentBeanConverterImpl;
+import org.apache.jackrabbit.ocm.mapper.impl.annotation.Bean;
+import org.apache.jackrabbit.ocm.mapper.impl.annotation.Field;
+import org.apache.jackrabbit.ocm.mapper.impl.annotation.Node;
+
+/**
+ *
+ * @author &lt;a href=&quot;mailto:christophe.lombart@gmail.com&quot;&gt;Christophe Lombart&lt;/a&gt;
+ *
+ */
+@Node(jcrType=&quot;ocm:paragraph&quot;, discriminator=false)
+public class Paragraph
+{
+    @Field(path=true) private String path;
+    @Field(jcrName=&quot;ocm:text&quot;) private String text;
+    
+    // The converter ParentBeanConverterImpl can be used to have a simple reference
+    // to the page containing this pararaph (parent node) - cannot be updated
+    @Bean(proxy=true, converter=ParentBeanConverterImpl.class) private Page page;
+    
+    public String getPath()
+    {
+        return path;
+    }
+
+    public void setPath(String path)
+    {
+        this.path = path;
+    }
+
+    public Paragraph()
+    {
+        this.text = &quot;Default text&quot;;
+    }
+
+    public Paragraph(String text)
+    {
+        this.text = text;
+    }
+
+    /**
+     * @return Returns the text.
+     */
+    public String getText()
+    {
+        return text;
+    }
+
+    /**
+     * @param text The text to set.
+     */
+    public void setText(String text)
+    {
+        this.text = text;
+    }
+
+    public Page getPage()
+    {
+        return page;
+    }
+
+    public void setPage(Page page) {
+        this.page = page;
+    }
+
+    
+
+
+}
+</code></pre></noscript></div>
+
+
+<h2>単一オブジェクトの検索</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">QueryManager</span> <span class="n">queryManager</span> <span class="o">=</span> <span class="n">ocm</span><span class="o">.</span><span class="na">getQueryManager</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// サーチフィルタの組立て</span>
+</span><span class='line'><span class="n">Filter</span> <span class="n">filter</span> <span class="o">=</span> <span class="n">queryManager</span><span class="o">.</span><span class="na">createFilter</span><span class="o">(</span><span class="n">Paragraph</span><span class="o">.</span><span class="na">class</span><span class="o">);</span> <span class="c1">// Paragraph.classは永続オブジェクト</span>
+</span><span class='line'><span class="n">filter</span><span class="o">.</span><span class="na">addEqualTo</span><span class="o">(</span><span class="s">&quot;text&quot;</span><span class="o">,</span> <span class="s">&quot;Para 1&quot;</span><span class="o">);</span> <span class="c1">// @Fieldアノテーションでマッピングが定義されている</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// クエリの組立て</span>
+</span><span class='line'><span class="n">Query</span> <span class="n">query</span> <span class="o">=</span> <span class="n">queryManager</span><span class="o">.</span><span class="na">createQuery</span><span class="o">(</span><span class="n">filter</span><span class="o">);</span>
+</span><span class='line'><span class="n">Paragraph</span> <span class="n">paragraph</span> <span class="o">=</span> <span class="o">(</span><span class="n">Paragraph</span><span class="o">)</span> <span class="n">ocm</span><span class="o">.</span><span class="na">getObject</span><span class="o">(</span><span class="n">query</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>コレクションの検索</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">QueryManager</span> <span class="n">queryManager</span> <span class="o">=</span> <span class="n">ocm</span><span class="o">.</span><span class="na">getQueryManager</span><span class="o">();</span>
+</span><span class='line'><span class="n">Filter</span> <span class="n">filter</span> <span class="o">=</span> <span class="n">queryManager</span><span class="o">.</span><span class="na">createFilter</span><span class="o">(</span><span class="n">Paragraph</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+</span><span class='line'><span class="cm">/*</span>
+</span><span class='line'><span class="cm"> * /mynode/mysecondnode/&#39;の場合、/mynode/mysecondnodeの子要素（孫以下を含まない）を検索</span>
+</span><span class='line'><span class="cm"> * /mynode/mysecondnode//&#39;の場合、 /mynode/mysecondnodeの子孫要素全てを検索 </span>
+</span><span class='line'><span class="cm"> */</span>
+</span><span class='line'><span class="n">filter</span><span class="o">.</span><span class="na">setScope</span><span class="o">(</span><span class="s">&quot;/test/node1//&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">Query</span> <span class="n">query</span> <span class="o">=</span> <span class="n">queryManager</span><span class="o">.</span><span class="na">createQuery</span><span class="o">(</span><span class="n">filter</span><span class="o">);</span>
+</span><span class='line'><span class="n">Collection</span> <span class="n">result</span> <span class="o">=</span> <span class="n">ocm</span><span class="o">.</span><span class="na">getObjects</span><span class="o">(</span><span class="n">query</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>イタレータを用いた検索</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">QueryManager</span> <span class="n">queryManager</span> <span class="o">=</span> <span class="n">ocm</span><span class="o">.</span><span class="na">getQueryManager</span><span class="o">();</span>
+</span><span class='line'><span class="n">Filter</span> <span class="n">filter</span> <span class="o">=</span> <span class="n">queryManager</span><span class="o">.</span><span class="na">createFilter</span><span class="o">(</span><span class="n">Paragraph</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+</span><span class='line'><span class="n">filter</span><span class="o">.</span><span class="na">setScope</span><span class="o">(</span><span class="s">&quot;/test/node1//&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">Query</span> <span class="n">query</span> <span class="o">=</span> <span class="n">queryManager</span><span class="o">.</span><span class="na">createQuery</span><span class="o">(</span><span class="n">filter</span><span class="o">);</span>
+</span><span class='line'><span class="n">Iterator</span> <span class="n">iterator</span> <span class="o">=</span> <span class="n">ocm</span><span class="o">.</span><span class="na">getObjectIterator</span><span class="o">(</span><span class="n">query</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>クエリによる削除</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">QueryManager</span> <span class="n">queryManager</span> <span class="o">=</span> <span class="n">ocm</span><span class="o">.</span><span class="na">getQueryManager</span><span class="o">();</span>
+</span><span class='line'><span class="n">Filter</span> <span class="n">filter</span> <span class="o">=</span> <span class="n">queryManager</span><span class="o">.</span><span class="na">createFilter</span><span class="o">(</span><span class="n">Paragraph</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+</span><span class='line'><span class="n">filter</span><span class="o">.</span><span class="na">setScope</span><span class="o">(</span><span class="s">&quot;/test/node1//&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">Query</span> <span class="n">query</span> <span class="o">=</span> <span class="n">queryManager</span><span class="o">.</span><span class="na">createQuery</span><span class="o">(</span><span class="n">filter</span><span class="o">);</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">query</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>OCM ロッキング</h1>
+
+<p>JCRスペック8.4に基づき、ノードとその子供をロックすることができる。OCM APIを使ってオブジェクトレベルでロックすることができる。ロックするためには、<code>mix:lockable</code> mixinタイプを宣言する必要がある。これはClass Descriptor内で宣言することが可能である。</p>
+
+<figure class='code'><figcaption><span>mix:lockableの宣言例 </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Node</span><span class="o">(</span><span class="n">jcrMixinTypes</span><span class="o">=</span><span class="s">&quot;mix:lockable&quot;</span> <span class="o">)</span>
+</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">A</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="nd">@Field</span><span class="o">(</span><span class="n">path</span><span class="o">=</span><span class="kc">true</span><span class="o">)</span> <span class="kd">private</span> <span class="n">String</span> <span class="n">path</span><span class="o">;</span>
+</span><span class='line'>    <span class="nd">@Field</span> <span class="kd">private</span> <span class="n">String</span> <span class="n">a1</span><span class="o">;</span>
+</span><span class='line'>    <span class="nd">@Field</span> <span class="kd">private</span> <span class="n">String</span> <span class="n">a2</span><span class="o">;</span>
+</span><span class='line'>    <span class="nd">@Bean</span><span class="o">(</span><span class="n">jcrType</span><span class="o">=</span><span class="s">&quot;nt:unstructured&quot;</span><span class="o">,</span> <span class="n">jcrOnParentVersion</span><span class="o">=</span><span class="s">&quot;IGNORE&quot;</span><span class="o">)</span> <span class="kd">private</span> <span class="n">B</span> <span class="n">b</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">B</span> <span class="n">emptyB</span><span class="o">;</span>
+</span><span class='line'><span class="o">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>基本例</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// --------------------------------------------------------------------------------</span>
+</span><span class='line'><span class="c1">// Create and store an object graph in the repository</span>
+</span><span class='line'><span class="c1">// --------------------------------------------------------------------------------</span>
+</span><span class='line'><span class="n">A</span> <span class="n">a</span> <span class="o">=</span> <span class="k">new</span> <span class="n">A</span><span class="o">();</span>
+</span><span class='line'><span class="n">a</span><span class="o">.</span><span class="na">setPath</span><span class="o">(</span><span class="s">&quot;/test&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">a</span><span class="o">.</span><span class="na">setA1</span><span class="o">(</span><span class="s">&quot;a1&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">a</span><span class="o">.</span><span class="na">setA2</span><span class="o">(</span><span class="s">&quot;a2&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">B</span> <span class="n">b</span> <span class="o">=</span> <span class="k">new</span> <span class="n">B</span><span class="o">();</span>
+</span><span class='line'><span class="n">b</span><span class="o">.</span><span class="na">setB1</span><span class="o">(</span><span class="s">&quot;b1&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">b</span><span class="o">.</span><span class="na">setB2</span><span class="o">(</span><span class="s">&quot;b2&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">a</span><span class="o">.</span><span class="na">setB</span><span class="o">(</span><span class="n">b</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">C</span> <span class="n">c1</span> <span class="o">=</span> <span class="k">new</span> <span class="n">C</span><span class="o">();</span>
+</span><span class='line'><span class="n">c1</span><span class="o">.</span><span class="na">setId</span><span class="o">(</span><span class="s">&quot;first&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">c1</span><span class="o">.</span><span class="na">setName</span><span class="o">(</span><span class="s">&quot;First Element&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">C</span> <span class="n">c2</span> <span class="o">=</span> <span class="k">new</span> <span class="n">C</span><span class="o">();</span>
+</span><span class='line'><span class="n">c2</span><span class="o">.</span><span class="na">setId</span><span class="o">(</span><span class="s">&quot;second&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">c2</span><span class="o">.</span><span class="na">setName</span><span class="o">(</span><span class="s">&quot;Second Element&quot;</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">C</span> <span class="n">c3</span> <span class="o">=</span> <span class="k">new</span> <span class="n">C</span><span class="o">();</span>
+</span><span class='line'><span class="n">c3</span><span class="o">.</span><span class="na">setId</span><span class="o">(</span><span class="s">&quot;third&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">c3</span><span class="o">.</span><span class="na">setName</span><span class="o">(</span><span class="s">&quot;Third Element&quot;</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">Collection</span> <span class="n">collection</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">();</span>
+</span><span class='line'><span class="n">collection</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">c1</span><span class="o">);</span>
+</span><span class='line'><span class="n">collection</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">c2</span><span class="o">);</span>
+</span><span class='line'><span class="n">collection</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">c3</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">a</span><span class="o">.</span><span class="na">setCollection</span><span class="o">(</span><span class="n">collection</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">insert</span><span class="o">(</span><span class="n">a</span><span class="o">);</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">save</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// --------------------------------------------------------------------------------</span>
+</span><span class='line'><span class="c1">// Check if the object is not locked</span>
+</span><span class='line'><span class="c1">// --------------------------------------------------------------------------------</span>
+</span><span class='line'><span class="k">if</span> <span class="o">(</span><span class="n">ocm</span><span class="o">.</span><span class="na">isLocked</span><span class="o">(</span><span class="s">&quot;/test&quot;</span><span class="o">))</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>       <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Error : The object is locked- humm ??&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// --------------------------------------------------------------------------------</span>
+</span><span class='line'><span class="c1">// Lock the object</span>
+</span><span class='line'><span class="c1">// --------------------------------------------------------------------------------</span>
+</span><span class='line'>    <span class="cm">/*</span>
+</span><span class='line'><span class="cm">     * Lock object saved on {@param path }.</span>
+</span><span class='line'><span class="cm">     *</span>
+</span><span class='line'><span class="cm">     * @param path</span>
+</span><span class='line'><span class="cm">     *            path to saved object.</span>
+</span><span class='line'><span class="cm">     * @param isDeep</span>
+</span><span class='line'><span class="cm">     *            is lock deep? See JCR spec: 8.4.3 Shallow and Deep Locks</span>
+</span><span class='line'><span class="cm">     *            Shallow lockは該当ノードのみロック。Deepロックはサブグラフまで含めてロック。</span>
+</span><span class='line'><span class="cm">     *            JCR Ver.2では17.2にて定義されている。</span>
+</span><span class='line'><span class="cm">     * @param isSessionScoped</span>
+</span><span class='line'><span class="cm">     *            is lock session scoped? See JCR spec: Session-scoped and</span>
+</span><span class='line'><span class="cm">     *            Open-scoped Locks</span>
+</span><span class='line'><span class="cm">     *            Session scope lockはSessionがexpireしたタイミングでロックが解除される。</span>
+</span><span class='line'><span class="cm">     *            Open scopeはタイムアウトか明示的に解除するまでロックが保持される。</span>
+</span><span class='line'><span class="cm">     *            JCR 2では17.6で定義されている。</span>
+</span><span class='line'><span class="cm">     * @return lock - Wrapper object for a JCR lock</span>
+</span><span class='line'><span class="cm">     *</span>
+</span><span class='line'><span class="cm">     * @throws LockedException</span>
+</span><span class='line'><span class="cm">     *             if path is locked (cannot lock same path again)</span>
+</span><span class='line'><span class="cm">     */</span>
+</span><span class='line'><span class="n">String</span> <span class="n">lockToken</span> <span class="o">=</span> <span class="n">ocm</span><span class="o">.</span><span class="na">lock</span><span class="o">(</span><span class="s">&quot;/test&quot;</span><span class="o">,</span> <span class="kc">true</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// --------------------------------------------------------------------------------</span>
+</span><span class='line'><span class="c1">// Check if the object is not locked</span>
+</span><span class='line'><span class="c1">// --------------------------------------------------------------------------------</span>
+</span><span class='line'><span class="k">if</span> <span class="o">(!</span> <span class="n">ocm</span><span class="o">.</span><span class="na">isLocked</span><span class="o">(</span><span class="s">&quot;/test&quot;</span><span class="o">))</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>       <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Error : The object is not locked- humm ??&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// --------------------------------------------------------------------------------</span>
+</span><span class='line'><span class="c1">// Unlock the object</span>
+</span><span class='line'><span class="c1">// --------------------------------------------------------------------------------</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">unlock</span><span class="o">(</span><span class="s">&quot;/test&quot;</span><span class="o">,</span> <span class="n">lockToken</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>OCMバージョン管理</h1>
+
+<p>現状では、OCMツールは基本的なバージョン機能を提供している。</p>
+
+<ul>
+<li>チェックイン、チェックアウト</li>
+<li>バージョン履歴の取得（最初のバージョン、最新バージョン、完全な履歴）</li>
+<li>ラベルの適用</li>
+</ul>
+
+
+<p>将来的にはバージョン間比較、置換、回復などの機能も追加される予定である。バージョン管理されるオブジェクトは<code>mix:versionable</code>をマップする必要がある。これはXMLかアノテーションで定義可能である。</p>
+
+<h2>チェックイン、チェックアウト</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// 初期バージョンの作成</span>
+</span><span class='line'><span class="n">Page</span> <span class="n">page</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Page</span><span class="o">();</span>
+</span><span class='line'><span class="n">page</span><span class="o">.</span><span class="na">setPath</span><span class="o">(</span><span class="s">&quot;/page&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">page</span><span class="o">.</span><span class="na">setTile</span><span class="o">(</span><span class="s">&quot;Page Title&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">page</span><span class="o">.</span><span class="na">addParagraph</span><span class="o">(</span><span class="k">new</span> <span class="n">Paragraph</span><span class="o">(</span><span class="s">&quot;para1&quot;</span><span class="o">));</span>
+</span><span class='line'><span class="n">page</span><span class="o">.</span><span class="na">addParagraph</span><span class="o">(</span><span class="k">new</span> <span class="n">Paragraph</span><span class="o">(</span><span class="s">&quot;para2&quot;</span><span class="o">));</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">insert</span><span class="o">(</span><span class="n">page</span><span class="o">);</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">save</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// pageオブジェクトを更新し、新しいバージョンを作る</span>
+</span><span class='line'><span class="n">page</span><span class="o">.</span><span class="na">addParagraph</span><span class="o">(</span><span class="k">new</span> <span class="n">Pargraph</span><span class="o">(</span><span class="s">&quot;para3&quot;</span><span class="o">));</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">checkout</span><span class="o">(</span><span class="s">&quot;/page&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">update</span><span class="o">(</span><span class="n">page</span><span class="o">);</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">save</span><span class="o">();</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">checkin</span><span class="o">(</span><span class="s">&quot;/page&quot;</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// pageオブジェクトを更新し、新しいバージョンを作る</span>
+</span><span class='line'><span class="n">page</span><span class="o">.</span><span class="na">addParagraph</span><span class="o">(</span><span class="k">new</span> <span class="n">Pargraph</span><span class="o">(</span><span class="s">&quot;para4&quot;</span><span class="o">));</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">checkout</span><span class="o">(</span><span class="s">&quot;/page&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">update</span><span class="o">(</span><span class="n">page</span><span class="o">);</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">save</span><span class="o">();</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">checkin</span><span class="o">(</span><span class="s">&quot;/page&quot;</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>バージョン履歴の取得</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">VersionIterator</span> <span class="n">versionIterator</span> <span class="o">=</span> <span class="n">ocm</span><span class="o">.</span><span class="na">getAllVersions</span><span class="o">(</span><span class="s">&quot;/page&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="k">while</span> <span class="o">(</span><span class="n">versionIterator</span><span class="o">.</span><span class="na">hasNext</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Version</span> <span class="n">version</span> <span class="o">=</span> <span class="o">(</span><span class="n">Version</span><span class="o">)</span> <span class="n">versionIterator</span><span class="o">.</span><span class="na">next</span><span class="o">();</span>
+</span><span class='line'>    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;version found : &quot;</span> <span class="o">+</span> <span class="n">version</span><span class="o">.</span><span class="na">getName</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot; - &quot;</span> <span class="o">+</span> <span class="n">version</span><span class="o">.</span><span class="na">getPath</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot; - &quot;</span> <span class="o">+</span> <span class="n">version</span><span class="o">.</span><span class="na">getCrated</span><span class="o">().</span><span class="na">getTime</span><span class="o">()));</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>バージョン内容の取得</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// 初期バージョンの説明を取得</span>
+</span><span class='line'><span class="n">Version</span> <span class="n">baseVersion</span> <span class="o">=</span> <span class="n">ocm</span><span class="o">.</span><span class="na">getBaseVersion</span><span class="o">(</span><span class="s">&quot;/page&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Base version : &quot;</span> <span class="o">+</span> <span class="n">baseVersion</span><span class="o">.</span><span class="na">gateName</span><span class="o">());</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 最新バージョンの説明を取得</span>
+</span><span class='line'><span class="n">Version</span> <span class="n">rootVersion</span> <span class="o">=</span> <span class="n">ocm</span><span class="o">.</span><span class="na">getRootVersion</span><span class="o">(</span><span class="s">&quot;/page&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Root version : &quot;</span> <span class="o">+</span> <span class="n">rootVersion</span><span class="o">.</span><span class="na">gateName</span><span class="o">());</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>特定のバージョンのオブジェクトを取得</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// 初期バージョンのオブジェクトを取得する</span>
+</span><span class='line'><span class="n">Page</span> <span class="n">page</span> <span class="o">=</span> <span class="o">(</span><span class="n">Page</span><span class="o">)</span> <span class="n">ocm</span><span class="o">.</span><span class="na">getObject</span><span class="o">(</span><span class="s">&quot;/page&quot;</span><span class="o">,</span> <span class="s">&quot;1.0&quot;</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>バージョンラベルの使用</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Page</span> <span class="n">page</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Page</span><span class="o">();</span>
+</span><span class='line'><span class="n">page</span><span class="o">.</span><span class="na">setPath</span><span class="o">(</span><span class="s">&quot;/page&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">page</span><span class="o">.</span><span class="na">setTitle</span><span class="o">(</span><span class="s">&quot;Page Title&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">page</span><span class="o">.</span><span class="na">addParagraph</span><span class="o">(</span><span class="k">new</span> <span class="n">Paragraph</span><span class="o">(</span><span class="s">&quot;para1&quot;</span><span class="o">));</span>
+</span><span class='line'><span class="n">page</span><span class="o">.</span><span class="na">addParagraph</span><span class="o">(</span><span class="k">new</span> <span class="n">Paragraph</span><span class="o">(</span><span class="s">&quot;para2&quot;</span><span class="o">));</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">insert</span><span class="o">(</span><span class="n">page</span><span class="o">);</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">save</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// ラベルと共にチェックイン</span>
+</span><span class='line'><span class="n">page</span><span class="o">.</span><span class="na">addParagraph</span><span class="o">(</span><span class="k">new</span> <span class="n">Paragraph</span><span class="o">(</span><span class="s">&quot;para3&quot;</span><span class="o">));</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">checkout</span><span class="o">(</span><span class="s">&quot;/page&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">update</span><span class="o">(</span><span class="n">page</span><span class="o">);</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">save</span><span class="o">();</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">checkin</span><span class="o">(</span><span class="s">&quot;/page&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="n">String</span><span class="o">[]</span> <span class="o">{</span><span class="s">&quot;A&quot;</span><span class="o">,</span> <span class="s">&quot;B&quot;</span><span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// ラベルと共にチェックイン</span>
+</span><span class='line'><span class="n">page</span><span class="o">.</span><span class="na">addParagraph</span><span class="o">(</span><span class="k">new</span> <span class="n">Paragraph</span><span class="o">(</span><span class="s">&quot;para4&quot;</span><span class="o">));</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">checkout</span><span class="o">(</span><span class="s">&quot;/page&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">update</span><span class="o">(</span><span class="n">page</span><span class="o">);</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">save</span><span class="o">();</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">checkin</span><span class="o">(</span><span class="s">&quot;/page&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="n">String</span><span class="o">[]</span> <span class="o">{</span><span class="s">&quot;C&quot;</span><span class="o">,</span> <span class="s">&quot;D&quot;</span><span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// ラベルを全て取得</span>
+</span><span class='line'><span class="n">String</span><span class="o">[]</span> <span class="n">allLabels</span> <span class="o">=</span> <span class="n">ocm</span><span class="o">.</span><span class="na">geAllVersionLabels</span><span class="o">(</span><span class="s">&quot;/page&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">assertTrue</span><span class="o">(</span><span class="s">&quot;incorrect number of labesl&quot;</span><span class="o">,</span> <span class="n">allLrables</span><span class="o">.</span><span class="na">length</span> <span class="o">==</span> <span class="mi">4</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// version 1.1にアサインされたラベルを取得</span>
+</span><span class='line'><span class="n">String</span><span class="o">[]</span> <span class="n">versionLabels</span> <span class="o">=</span> <span class="n">ocm</span><span class="o">.</span><span class="na">getVersionLables</span><span class="o">(</span><span class="s">&quot;/page&quot;</span><span class="o">,</span> <span class="s">&quot;1.1&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">assertTrue</span><span class="o">(</span><span class="s">&quot;incorrect number of labels&quot;</span><span class="o">,</span> <span class="n">versionLabels</span><span class="o">.</span><span class="na">length</span> <span class="o">==</span> <span class="mi">2</span><span class="o">);</span>
+</span><span class='line'><span class="n">assertTrue</span><span class="o">(</span><span class="s">&quot;incorrect label&quot;</span><span class="o">,</span> <span class="n">versionLabels</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="na">equals</span><span class="o">(</span><span class="s">&quot;C&quot;</span><span class="o">)</span> <span class="o">||</span> <span class="n">versionLables</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="na">equals</span><span class="o">(</span><span class="s">&quot;D&quot;</span><span class="o">));</span>
+</span><span class='line'><span class="n">assertTrue</span><span class="o">(</span><span class="s">&quot;incorrect label&quot;</span><span class="o">,</span> <span class="n">versionLabels</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="na">equals</span><span class="o">(</span><span class="s">&quot;C&quot;</span><span class="o">)</span> <span class="o">||</span> <span class="n">versionLables</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="na">equals</span><span class="o">(</span><span class="s">&quot;D&quot;</span><span class="o">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>マッピングストラテジー</h1>
+
+<h2>オブジェクトモデル</h2>
+
+<p>例として、下記のモデルを定義する。<code>PageInfo</code>クラスは<code>Bean</code>マッピングを例示するために作られたもので、モデリングの観点からは<code>Page</code>クラスから分離する意義はない。</p>
+
+<p><img src="http://jackrabbit.apache.org/mapping-stategies.data/sample-model-doc.png"></p>
+
+<figure class='code'><figcaption><span>Page.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Page</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>  <span class="n">String</span> <span class="n">path</span><span class="o">;</span>
+</span><span class='line'>  <span class="n">PageInfo</span> <span class="n">pageInfo</span><span class="o">;</span>
+</span><span class='line'>  <span class="n">Collection</span> <span class="n">paragraphs</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="cm">/*  Add here the getter and setter methods */</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">addParagraph</span><span class="o">(</span><span class="n">Paragraph</span> <span class="n">paragraph</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">(</span><span class="n">paragraphs</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">{</span>
+</span><span class='line'>      <span class="n">paragraphs</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">paragraphs</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">paragraph</span><span class="o">);</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>PageInfo.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">PageInfo</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>  <span class="n">String</span> <span class="n">path</span><span class="o">;</span>
+</span><span class='line'>  <span class="n">String</span> <span class="n">title</span><span class="o">;</span>
+</span><span class='line'>  <span class="n">String</span> <span class="n">description</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="cm">/*  Add here the getter and setter methods */</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span>Paragraph.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Paragraph</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">String</span> <span class="n">path</span><span class="o">;</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">String</span> <span class="n">text</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="cm">/* Add here the getter and setter methods */</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>JCR ツリー構造</h2>
+
+<p>２パラグラフを含むページを<code>/mysite/mypage1</code>に登録した場合の構造。</p>
+
+<figure class='code'><figcaption><span>Paragraph.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="o">/</span><span class="n">mysite</span><span class="o">/</span><span class="n">page1</span>
+</span><span class='line'>  <span class="o">/</span><span class="n">mysite</span><span class="o">/</span><span class="n">page1</span><span class="o">/</span><span class="n">pageInfo</span>
+</span><span class='line'>    <span class="nl">my:</span><span class="n">title</span> <span class="o">=</span> <span class="s">&quot;This is my page title&quot;</span> <span class="o">==&gt;</span> <span class="n">atomic</span><span class="err">フィールドはプロパティ</span>
+</span><span class='line'>    <span class="nl">my:</span><span class="n">description</span> <span class="o">=</span> <span class="s">&quot;This is my page description&quot;</span>
+</span><span class='line'>  <span class="o">/</span><span class="n">mysite</span><span class="o">/</span><span class="n">page1</span><span class="o">/</span><span class="n">paragraphs</span> <span class="o">==&gt;</span> <span class="err">コレクションの要素がサブノードとして登録されている</span>
+</span><span class='line'>    <span class="o">/</span><span class="n">mysite</span><span class="o">/</span><span class="n">page1</span><span class="o">/</span><span class="n">paragraphs</span><span class="o">/</span><span class="n">paragraph1</span>
+</span><span class='line'>      <span class="nl">my:</span><span class="n">text</span> <span class="o">=</span> <span class="s">&quot;This is the content of para1&quot;</span>
+</span><span class='line'>    <span class="o">/</span><span class="n">mysite</span><span class="o">/</span><span class="n">page1</span><span class="o">/</span><span class="n">paragraphs</span><span class="o">/</span><span class="n">paragraph2</span>
+</span><span class='line'>      <span class="nl">my:</span><span class="n">text</span> <span class="o">=</span> <span class="s">&quot;This is the content of para2&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>Class Descriptor</h1>
+
+<h2>Atomic</h2>
+
+<div><script src='https://gist.github.com/2822695.js?file='></script>
+<noscript><pre><code>@Node
+public class Atomic
+{   
+    @Field(path=true) protected String path;
+    @Field private String string;
+    @Field private Boolean booleanObject;
+    @Field private boolean booleanPrimitive;
+    @Field private Integer integerObject;
+    @Field private int intPrimitive;
+    @Field private byte[] byteArray;
+    @Field private Calendar calendar;
+    @Field private Date date;
+    @Field private Double doubleObject;
+    @Field private double doublePrimitive;
+    @Field private InputStream inputStream;
+    @Field private Timestamp timestamp;
+    
+    @Field (converter = Int2BooleanTypeConverterImpl.class)
+    private boolean int2boolean;
+
+    @Field (converter = NameTypeConverterImpl.class)
+    private String namedProperty;
+
+    @Field (converter = PathTypeConverterImpl.class)
+    private String pathProperty; // used to refer another node
+
+    @Field (converter = UndefinedTypeConverterImpl.class)
+    private Object undefinedProperty;
+</code></pre></noscript></div>
+
+
+<h2>Atomic Type Converter</h2>
+
+<h3>インターフェース</h3>
+
+<p> <div><script src='https://gist.github.com/2822741.js?file='></script>
+<noscript><pre><code>package org.apache.jackrabbit.ocm.manager.atomictypeconverter;</p>
+
+<p>import javax.jcr.Value;
+import javax.jcr.ValueFactory;</p>
+
+<p>/<em>*
+ *
+ * AtomicTypeConverter interface.
+ *
+ * The Object converter used atomic type converters to map atomic fields to JCR Value objects.
+ * Amotic fields are primitive java types and their wrapper classes.
+ *
+ *
+ * @author &lt;a href=&quot;mailto:christophe.lombart@sword-technologies.com&quot;&gt;Christophe Lombart&lt;/a&gt;
+ * @author &lt;a href='mailto:the_mindstorm[at]evolva[dot]ro'&gt;Alexandru Popescu&lt;/a&gt;
+ </em>/
+public interface AtomicTypeConverter
+{</p>
+
+<pre><code>/**
+ * Convert an object into a JCR value.
+ *
+ * @param valueFactory The JCR ValueFactory
+ * @param object The object to convert
+ * @return the corresponding JCR value
+ *
+ */
+public Value getValue(ValueFactory valueFactory, Object object);
+
+/**
+ * Convert a jcr property value into an object
+ *
+ * @param value The JCR property value
+ * @return the corresponding object 
+ */
+public Object getObject(Value value);
+
+/**
+ * Get the string converted value. This is mainly used to build xpath expressions
+ *
+ * @param valueFactory The JCR ValueFactory
+ * @param object The object value
+ * @return The string converted value   
+ */
+public String getXPathQueryValue(ValueFactory valueFactory, Object object);
+</code></pre>
+
+<p>}
+</code></pre></noscript></div></p>
+
+<h3>実装例</h3>
+
+<p> <div><script src='https://gist.github.com/2822770.js?file='></script>
+<noscript><pre><code>package org.apache.jackrabbit.ocm.manager.atomictypeconverter.impl;</p>
+
+<p>import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
+import javax.jcr.ValueFactory;</p>
+
+<p>import org.apache.jackrabbit.ocm.exception.IncorrectAtomicTypeException;
+import org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverter;</p>
+
+<p>/<em>*
+ *
+ *  Name Type Converter
+ *
+ * @author &lt;a href=&quot;mailto:christophe.lombart@gmail.com&quot;&gt;Christophe Lombart&lt;/a&gt;
+ *
+ </em>/
+public class PathTypeConverterImpl implements AtomicTypeConverter
+{</p>
+
+<pre><code>/**
+ *
+ * @see org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverter#getValue(java.lang.Object)
+ */
+public Value getValue(ValueFactory valueFactory, Object propValue)
+{
+    try
+    {
+        if (propValue == null)
+        {
+            return null;
+        }
+        return valueFactory.createValue((String) propValue, PropertyType.PATH);
+    }
+    catch (RepositoryException e)
+    {
+        throw new IncorrectAtomicTypeException(&amp;quot;Impossible to convert the value into a path property : &amp;quot; + propValue.toString() + &amp;quot;. Check if it is a valid path.&amp;quot;, e);
+    }
+
+}
+
+/**
+ *
+ * @see org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverter#getObject(javax.jcr.Value)
+ */
+public Object getObject(Value value)
+{
+    try
+    {
+        return value.getString();
+    }
+    catch (RepositoryException e)
+    {
+        throw new IncorrectAtomicTypeException(&amp;quot;Impossible to convert the path into a string&amp;quot;, e);
+    }
+
+}
+
+/**
+ *
+ * @see org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverter#getStringValue(java.lang.Object)
+ */
+public String getXPathQueryValue(ValueFactory valueFactory, Object object)
+{
+    return &amp;quot;'&amp;quot; + object.toString() + &amp;quot;'&amp;quot;;
+}
+</code></pre>
+
+<p>}
+</code></pre></noscript></div></p>
+
+<h2>Bean Converter</h2>
+
+<p> <div><script src='https://gist.github.com/2829877.js?file='></script>
+<noscript><pre><code>package org.apache.jackrabbit.ocm.manager.beanconverter;</p>
+
+<p>import javax.jcr.Node;
+import javax.jcr.Session;</p>
+
+<p>import org.apache.jackrabbit.ocm.exception.JcrMappingException;
+import org.apache.jackrabbit.ocm.exception.ObjectContentManagerException;
+import org.apache.jackrabbit.ocm.exception.RepositoryException;
+import org.apache.jackrabbit.ocm.manager.beanconverter.impl.ParentBeanConverterImpl;
+import org.apache.jackrabbit.ocm.mapper.model.BeanDescriptor;
+import org.apache.jackrabbit.ocm.mapper.model.ClassDescriptor;</p>
+
+<p>/<em>*
+ * Interface describing a custom bean converter.
+ *
+ * @author &lt;a href='mailto:the_mindstorm[at]evolva[dot]ro'&gt;Alexandru Popescu&lt;/a&gt;
+ </em>/
+public interface BeanConverter {</p>
+
+<pre><code>/**
+ * Insert the object.
+ *
+ * @param session the JCR session
+ * @param parentNode The node which will contain the converter bean
+ * @param beanDescriptor The bean descriptor
+ * @param beanClassDescriptor the Class Descriptor associated to the bean to insert
+ * @param bean the bean to convert( insert into the JCR structure)
+ * @param parentClassDescriptor The Class Descriptor associated to the parent object
+ * @param parent the object which will contain the bean to convert
+ *
+ * @throws ObjectContentManagerException thrown in case the insert fails; marks a failure due to logic of
+ *  the insert (parent node cannot be accessed, the insert fails, etc.)
+ * @throws RepositoryException thrown in case the underlying repository has thrown a
+ *  &amp;lt;code&amp;gt;javax.jcr.RepositoryException&amp;lt;/code&amp;gt; that is not possible to be handled or
+ *  wrapped in ObjectContentManagerException; marks a repository failure
+ * @throws JcrMappingException throws in case the mapping of the bean is not correct
+ */
+void insert(Session session, Node parentNode, BeanDescriptor beanDescriptor, ClassDescriptor beanClassDescriptor, Object bean, ClassDescriptor parentClassDescriptor, Object parent)
+throws ObjectContentManagerException, RepositoryException, JcrMappingException;
+
+/**
+ * Update repository from bean values.
+ *
+ * @param session the JCR session
+ * @param parentNode The node which will contain the converter bean
+ * @param beanDescriptor The bean descriptor
+ * @param beanClassDescriptor the Class Descriptor associated to the bean to update
+ * @param bean the bean to convert( insert into the JCR structure)
+ * @param parentClassDescriptor The Class Descriptor associated to the parent object
+ * @param parent the object which will contain the bean to convert
+ *
+ * @throws ObjectContentManagerException thrown in case the update fails; marks a failure due to logic
+ *  of update (parent node cannot be accessed, the update fails, etc.)
+ * @throws RepositoryException thrown in case the underlying repository has thrown a
+ *  &amp;lt;code&amp;gt;javax.jcr.RepositoryException&amp;lt;/code&amp;gt; that is not possible to be handled or
+ *  wrapped in ObjectContentManagerException; marks a repository failure
+ * @throws JcrMappingException throws in case the mapping of the bean is not correct
+ */
+void update(Session session, Node parentNode, BeanDescriptor beanDescriptor, ClassDescriptor beanClassDescriptor, Object bean, ClassDescriptor parentClassDescriptor, Object parent)
+throws ObjectContentManagerException, RepositoryException, JcrMappingException;
+
+/**
+ * Retrieve a bean from the repository.
+ *
+ * @param session the JCR session
+ * @param parentNode The parent node
+ * @param beanDescriptor The bean descriptor
+ * @param beanClassDescriptor the Class Descriptor associated to the bean to insert
+ * @param beanClass The bean Class
+ * @param parent The parent which contain the bean to retrieve
+ *
+ * @throws ObjectContentManagerException thrown in case the bean cannot be retrieved or initialized;
+ *  marks a failure due to logic of retrieval
+ * @throws RepositoryException thrown in case the underlying repository has thrown a
+ *  &amp;lt;code&amp;gt;javax.jcr.RepositoryException&amp;lt;/code&amp;gt; that is not possible to be handled or
+ *  wrapped in ObjectContentManagerException; marks a repository failure
+ * @throws JcrMappingException throws in case the mapping of the bean is not correct
+ */
+Object getObject(Session session, Node parentNode, BeanDescriptor beanDescriptor, ClassDescriptor beanClassDescriptor, Class beanClass, Object parent)
+throws ObjectContentManagerException, RepositoryException, JcrMappingException;
+
+
+/**
+ * Remove the bean from the repository.
+ *
+ * @param session the JCR session
+ * @param parentNode The node which will contain the converter bean
+ * @param beanDescriptor The bean descriptor
+ * @param beanClassDescriptor the Class Descriptor associated to the bean to update
+ * @param bean the bean to convert( insert into the JCR structure)
+ * @param parentClassDescriptor The Class Descriptor associated to the parent object
+ * @param parent the object which contains the bean to convert
+ *
+ * @throws ObjectContentManagerException thrown in case the bean cannot be removed;
+ *  marks a failure due to logic of removal
+ * @throws RepositoryException thrown in case the underlying repository has thrown a
+ *  &amp;lt;code&amp;gt;javax.jcr.RepositoryException&amp;lt;/code&amp;gt; that is not possible to be handled or
+ *  wrapped in ObjectContentManagerException; marks a repository failure
+ * @throws JcrMappingException throws in case the mapping of the bean is not correct
+ */
+void remove(Session session, Node parentNode,  BeanDescriptor beanDescriptor, ClassDescriptor beanClassDescriptor, Object bean, ClassDescriptor parentClassDescriptor, Object parent)
+throws ObjectContentManagerException, RepositoryException, JcrMappingException;
+
+/**
+ * Get the bean path.
+ *
+ * When the bean is mapped to a subnode, the bean path is the parent node path + the jcrname of the current bean.
+ * Sometime a BeanConverter can be used to access to a bean which is not mapped to a subnode. In this case,
+ * another implementation can be provided in this method getPath. {@link  ParentBeanConverterImpl} is a good example.
+ *
+ * @param session the JCR session
+ * @param beanDescriptor The descriptor of the bean to convert
+ * @param parentNode the node which contain this bean (its corresponfing subnode)
+ * @return the bean path
+ *
+ * @throws RepositoryException thrown in case the underlying repository has thrown a
+ *  &amp;lt;code&amp;gt;javax.jcr.RepositoryException&amp;lt;/code&amp;gt; that is not possible to be handled or
+ *  wrapped in ObjectContentManagerException; marks a repository failure
+ *
+ */
+String getPath(Session session, BeanDescriptor beanDescriptor, Node parentNode)
+throws ObjectContentManagerException;
+</code></pre>
+
+<p>}
+</code></pre></noscript></div></p>
+</div>
+  
+  
+
+
+    </article>
+  
   <div class="pagination">
     
     <a href="/blog/archives">Blog Archives</a>
@@ -77,7 +2081,44 @@
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
     
+      <li class="post">
+        <a href="/blog/2012/05/29/jackrabbit-ocm-class-descriptor/">Jackrabbit-ocm Class Descriptor</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/05/28/jackrabbit-ocm/">Jackrabbit OCM</a>
+      </li>
+    
   </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/k2n">@k2n</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'k2n',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
 </section>
 
 
@@ -99,6 +2140,15 @@
   
 
 
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
 
 
 

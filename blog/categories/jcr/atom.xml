@@ -1,0 +1,1513 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: jcr | Code Critique]]></title>
+  <link href="http://k2n.github.com/blog/categories/jcr/atom.xml" rel="self"/>
+  <link href="http://k2n.github.com/"/>
+  <updated>2012-05-29T17:07:38-07:00</updated>
+  <id>http://k2n.github.com/</id>
+  <author>
+    <name><![CDATA[Kenji Nakamura]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Jackrabbit-ocm Class Descriptor]]></title>
+    <link href="http://k2n.github.com/blog/2012/05/29/jackrabbit-ocm-class-descriptor/"/>
+    <updated>2012-05-29T11:27:00-07:00</updated>
+    <id>http://k2n.github.com/blog/2012/05/29/jackrabbit-ocm-class-descriptor</id>
+    <content type="html"><![CDATA[<h1>Class Descriptor要素と属性</h1>
+
+<p><a href="https://github.com/k2n/jackrabbit-ocm/blob/master/src/main/resources/org/apache/jackrabbit/ocm/config/jackrabbit-ocm-1.5.dtd">jackrabbit-ocm-1.5.dtd</a>に基づく。</p>
+
+<h1>class-descriptor</h1>
+
+<p>``` dtd XML
+&lt;!ATTLIST class-descriptor</p>
+
+<pre><code>className CDATA #REQUIRED            ==| クラス名
+jcrType CDATA #IMPLIED               ==| プライマリーJCRノードタイプ、オプション、既定値はnt:unstructured
+jcrSuperTypes CDATA #IMPLIED         ==| JCR親タイプ、オプション
+jcrMixinTypes CDATA #IMPLIED         ==| JCR mix-inタイプ（カンマ区切りで複数指定）オプション
+extend CDATA #IMPLIED                ==| 親クラス名、オプション
+abstract (true|false) "false"        ==| 抽象クラスで階層マッピング内で使われている場合はtrue
+interface (true|false) "false"       ==| インターフェースならtrue
+discriminator (true|false) "true"    ==| マップされたノードがocm:discriminatorノードタイプを要求する場合はtrue。このタイプはclasssNameプロパティを含む。
+</code></pre>
+
+<blockquote><p>```</p></blockquote>
+
+<p>``` java Annotation
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE})
+public @interface Node {</p>
+
+<pre><code>String jcrType() default "nt:unstructured";
+String jcrSuperTypes() default "";
+String jcrMixinTypes() default "";
+// Define the extend setting in the mapping descriptor - Provide less flexibility if we use the java instrospection 
+Class extend() default Object.class;
+
+// Define the abstract setting in the mapping descriptor - Provide less flexibility if we use the java instrospection
+boolean isAbstract() default false;
+</code></pre>
+
+<p>//   Define the inteface setting in the mapping descriptor - Provide less flexibility if we use the java instrospection</p>
+
+<pre><code>boolean isInterface() default false;
+
+// Discriminator is used when an object hierarchy tree is mapped into the same jcr node type
+// TODO : try to drop it from the mapping strategy. it should be hidden in the persistence manager impl.
+boolean discriminator() default true;
+</code></pre>
+
+<p>}
+```</p>
+
+<h2>使用例(XML)</h2>
+
+<p>``` xml XML
+<jackrabbit-ocm></p>
+
+<pre><code>&lt;class-descriptor
+    className="org.apache.jackrabbit.ocm.testmodel.Atomic" jcrType="nt:unstructured" discriminator="true" &gt;
+    &lt;field-descriptor fieldName="path" path="true" /&gt;
+    &lt;field-descriptor fieldName="string" jcrName="string" /&gt;
+    &lt;field-descriptor fieldName="booleanObject" jcrName="booleanObject" /&gt;
+</code></pre>
+
+<p>...
+```</p>
+
+<h2>使用例(annotation)</h2>
+
+<p>``` java Annotation
+@Node(jcrType="ocm:page", discriminator=false)
+public class Page
+{</p>
+
+<pre><code>@Field(path=true) String path;
+@Field(jcrName="ocm:title") String title;
+
+@Collection(collectionConverter=NTCollectionConverterImpl.class, jcrElementName="paragraph")
+List&lt;Paragraph&gt; paragraphs;
+</code></pre>
+
+<p>...
+```</p>
+
+<h2>discriminator</h2>
+
+<ul>
+<li>discriminatorフラグが真であれば、<code>ObjectConverterImpl.java#getObject</code>で、<code>className</code>に紐付けられたclass descriptorによってオブジェクトがインスタンス化される。偽であれば、ノードタイプに紐付けられたclass descriptorによってインスタンス化される。</li>
+</ul>
+
+
+<p>``` java ObjectConverterImpl.java
+...</p>
+
+<pre><code>/**
+ *
+ * @see org.apache.jackrabbit.ocm.manager.objectconverter.ObjectConverter#insert(javax.jcr.Session,
+ *      javax.jcr.Node, java.lang.String, java.lang.Object)
+ */
+public void insert(Session session, Node parentNode, String nodeName, Object object) {
+    ClassDescriptor classDescriptor = mapper.getClassDescriptorByClass(object.getClass());
+
+       .....
+        // If required, add the discriminator node type
+        // discriminatorフラグがセットされていれば、
+        if (classDescriptor.hasDiscriminator()) {
+            // ocm_classnameをセット
+            addDiscriminatorProperty(object, objectNode);
+        }
+       .....
+}
+
+private void addDiscriminatorProperty(Object object, Node objectNode)
+        throws NoSuchNodeTypeException, VersionException,
+        ConstraintViolationException, LockException, RepositoryException,
+        ValueFormatException {
+
+    try {
+        // beanクラス名をセット
+        objectNode.setProperty(ManagerConstant.DISCRIMINATOR_CLASS_NAME_PROPERTY,
+                ReflectionUtils.getBeanClass(object).getName());
+
+    } catch (Exception e) {
+        // if it is not possible to add the CLASS_NAME_PROPERTY due to strong constraints in the
+        // node type definition, try to add the Discriminator node type.
+        String mixinTypeName;
+        mixinTypeName = ManagerConstant.DISCRIMINATOR_NODE_TYPE;
+        objectNode.addMixin(mixinTypeName);
+        objectNode.setProperty(ManagerConstant.DISCRIMINATOR_CLASS_NAME_PROPERTY,
+                ReflectionUtils.getBeanClass(object).getName());
+    }
+
+}
+</code></pre>
+
+<p>...</p>
+
+<pre><code>/**
+ * @see org.apache.jackrabbit.ocm.manager.objectconverter.ObjectConverter#getObject(javax.jcr.Session,
+ *      java.lang.Class, java.lang.String)
+ */
+public Object getObject(Session session, String path) {
+    try {
+        if (!session.itemExists(path)) {
+            return null;
+        }
+
+        if (requestObjectCache.isCached(path))
+        {
+            return requestObjectCache.getObject(path);
+        }
+
+        ClassDescriptor classDescriptor = null;
+        Node node = (Node) session.getItem(path);
+        // ocm_classname プロパティがあれば。。。
+        if (node.hasProperty(ManagerConstant.DISCRIMINATOR_CLASS_NAME_PROPERTY)) {
+            String className = node.getProperty(ManagerConstant.DISCRIMINATOR_CLASS_NAME_PROPERTY).getValue().getString();
+            // class名に基づいたdescriptorを取得
+            classDescriptor = mapper.getClassDescriptorByClass(ReflectionUtils.forName(className));
+        } else {
+            // そうでなければ、node typeを基にdescriptorを取得
+            String nodeType = node.getPrimaryNodeType().getName();
+            if (nodeType.equals(ManagerConstant.FROZEN_NODE_TYPE)) {
+                nodeType = node.getProperty(ManagerConstant.FROZEN_PRIMARY_TYPE_PROPERTY).getString();
+            }
+            classDescriptor = mapper.getClassDescriptorByNodeType(nodeType);
+        }
+
+        if (null == classDescriptor) {
+            throw new JcrMappingException("Impossible to find the classdescriptor for " + path
+                    + ". There is no discriminator and associated  JCR node type");
+        }
+
+        Object object = ReflectionUtils.newInstance(classDescriptor.getClassName());
+</code></pre>
+
+<p>...
+```</p>
+
+<h3>例：Paragraphクラス</h3>
+
+<ul>
+<li>Paragraphクラスの定義では、discriminatorがfalseに設定されているので、オブジェクトをリポジトリから取得する場合は、<code>ocm:paragraph</code>タイプのdescriptor情報を基にインスタンス化される。</li>
+</ul>
+
+
+<p>``` xml jcrmapping-sibling.xml</p>
+
+<pre><code>&lt;class-descriptor className="org.apache.jackrabbit.ocm.testmodel.Paragraph" jcrType="ocm:paragraph" discriminator="false" &gt;
+    &lt;field-descriptor fieldName="path" path="true" /&gt;
+    &lt;field-descriptor fieldName="text" jcrName="ocm:text"/&gt;
+&lt;/class-descriptor&gt;
+</code></pre>
+
+<p>```</p>
+
+<p>``` xml custom_nodetypes.xml
+  <nodeType name="ocm:paragraph" isMixin="false" hasOrderableChildNodes="false" primaryItemName=""></p>
+
+<pre><code>&lt;supertypes&gt;
+  &lt;supertype&gt;mix:versionable&lt;/supertype&gt;
+  &lt;supertype&gt;nt:base&lt;/supertype&gt;
+&lt;/supertypes&gt;
+&lt;propertyDefinition name="ocm:text" requiredType="String" autoCreated="false" mandatory="true" onParentVersion="COPY" protected="false" multiple="false" /&gt;
+</code></pre>
+
+<p>  </nodeType></p>
+
+<p>```</p>
+
+<h1>implement-descriptor</h1>
+
+<p>``` dtd implement-descriptor
+&lt;!ATTLIST implement-descriptor</p>
+
+<pre><code>interfaceName CDATA #REQUIRED   ==| フルパッケージ付きクラス名
+</code></pre>
+
+<blockquote><p>```</p></blockquote>
+
+<h2>例(XML)</h2>
+
+<p>``` xml</p>
+
+<pre><code>&lt;class-descriptor className="org.apache.jackrabbit.ocm.testmodel.auto.impl.CmsObjectImpl" jcrType="ocm:cmsobjectimpl"  
+                                   discriminator="false" abstract="true" &gt;
+    &lt;implement-descriptor interfaceName="org.apache.jackrabbit.ocm.testmodel.auto.CmsObject" /&gt;                                         
+</code></pre>
+
+<p><code>       
+* `implement-descriptor`を持つ`CmsObjectImpl`のクラスシグネチャ。`CmsObject`インターフェースをimplementしている。
+</code> java CmsObjectImpl Signature
+@Node(jcrType="ocm:cmsobjectimpl", discriminator=false, isAbstract=true)
+public abstract class CmsObjectImpl implements CmsObject
+{</p>
+
+<pre><code>@Field(path=true) protected String path;
+</code></pre>
+
+<p>...
+```</p>
+
+<h1>field-descriptor</h1>
+
+<p>``` dtd field-descriptor
+&lt;!ATTLIST field-descriptor</p>
+
+<pre><code>fieldName CDATA #REQUIRED                  ==| フィールド名
+jcrName CDATA #IMPLIED                     ==| JCRプロパティ名。省略された場合はfieldNameが使用される
+id (true | false) "false"                  ==| 本フィールドがIdならば真
+path (true | false) "false"                ==| 本フィールドがノードのpathを示しているのであれば真
+uuid (true | false) "false"                ==| 本フィールドがUUIDを示しているのであれば真。JCR2.0ではUUIDの使用は非推奨
+converter CDATA #IMPLIED                   ==| AtomicTypeConvertクラス名。指定されなければフィールドタイプの標準コンバータを使用
+jcrDefaultValue CDATA #IMPLIED             ==| フィールドがnullの場合に用いられる規定値
+jcrValueConstraints CDATA #IMPLIED         ==| カンマ区切りの許容される値のリスト
+jcrType (String | Date | Long | Doube | Boolean | Binary) #IMPLIED ==| JCRプロパティタイプ、オプション
+jcrAutoCreated (true | false) "false"      ==| 親オブジェクトインスタンス生成時に自動作成されるか否か
+jcrMandatory (true | false) "false"        ==| JCRプロパティが必須かどうか
+jcrOnParentVersion (COPY | VERSION | INITIALIZE | COMPUTE | IGNORE | ABORT) "COPY" ==| 親オブジェクトがバージョン管理され場合の振舞い
+jcrProtected (true | false) "false"        ==| このJCRノードプロパティが保護されるか否か
+jcrMultiple (true | false) "false"         ==| このJCRノードプロパティが複数値を取れるか否か
+</code></pre>
+
+<blockquote><p>```</p></blockquote>
+
+<h1>bean-descriptor</h1>
+
+<p>``` dtd bean-descriptor
+&lt;!ELEMENT bean-descriptor EMPTY>
+&lt;!ATTLIST bean-descriptor</p>
+
+<pre><code>fieldName CDATA #REQUIRED              ==| フィールド名
+jcrName CDATA #IMPLIED                 ==| JCRノード名。省略された場合はfieldNameが用いられる。
+proxy (true | false) "false"           ==| 真の場合、親オブジェクトのインスタンス化時にはロードされず、アクセス時に初めてローディングされる。
+autoRetrieve (true|false) "true"       ==| 偽の場合、親オブジェクトが取得された場合にもこのdescriptorを持つbeanは取得されない。
+autoUpdate (true|false) "true"         ==| 偽の場合、親オブジェクトが更新された場合にも更新されない。
+autoInsert (true|false) "true"         ==| 偽の場合、親オブジェクトが挿入された場合にも更新されない。
+converter CDATA #IMPLIED               ==| Converterクラスの古パッケージクラス名。規定値はObjectConverterImpl。
+jcrType CDATA #IMPLIED                 ==| ノードタイプ。オプション。規定値はnt:unstructured
+jcrAutoCreated (true | false) "false"  ==| 親オブジェクトが作成された際に自動的に作成されるかどうか。JCR2.0 3.7.2.3 
+jcrMandatory (true | false) "false"    ==| 親オブジェクトがsaveされる前に作成されていなければならない。JCR2.0 3.7.2.4
+jcrOnParentVersion (COPY | VERSION | INITIALIZE | COMPUTE | IGNORE | ABORT) "COPY" ==| 親オブジェクトがバージョン管理された場合の振舞い。
+jcrProtected (true | false) "false"    ==| 真の場合、削除不可、子要素は挿入、削除、順序変更不可、プロパティ追加削除不可、既存のpロパティ値の変更不可、主ノードタイプの変更不可、mixinノードタイプの追加削除不可。 3.7.2.2
+jcrSameNameSiblings (true | false) "false" ==| 同名ノードの許可。3.1.3.1
+</code></pre>
+
+<blockquote><p>```</p></blockquote>
+
+<h1>collection-descriptor</h1>
+
+<p>``` dtd collection-descriptor
+&lt;!ATTLIST collection-descriptor</p>
+
+<pre><code>fieldName CDATA #REQUIRED             ==| フィールド名。この値は一部のconverterでのみ用いられる。
+jcrName CDATA #IMPLIED                ==| JCRプロパティ名。指定されない場合はfieldNameが用いられる。
+proxy (true | false) "false"          ==| 真の場合、遅延ローディングされ、親オブジェクトの生成時にはロードされない。
+autoRetrieve (true|false) "true"      ==| 偽の場合、親オブジェクトが取得された時点でも取得されない。
+autoUpdate (true|false) "true"        ==| 偽の場合、親オブジェクトが更新されても更新されない。
+autoInsert (true|false) "true"        ==| 偽の場合、親オブジェクトが挿入されても挿入されない。
+elementClassName CDATA #IMPLIED       ==| 永続コレクションの要素クラスのフルパッケージ名。
+collectionClassName CDATA #IMPLIED    ==| Java Collectionクラスのフルパッケージクラス名。
+collectionConverter CDATA #IMPLIED    ==| コレクションマッピングストラテジーを制御する、converterのクラス名。規定値はDefaultCollectionConverterImpl。
+jcrElementName CDATA #IMPLIED         ==| コレクションの個々の要素に割り当てたいJCRノード名
+jcrType CDATA #IMPLIED                ==| コレクション要素のJCRタイプ。
+jcrAutoCreated (true | false) "false" ==| 親オブジェクト生成時に自動生成されるか  
+jcrMandatory (true | false) "false"   ==| 親オブジェクトがsaveされる前に存在していなければならないかどうか
+jcrOnParentVersion (COPY | VERSION | INITIALIZE | COMPUTE | IGNORE | ABORT) "COPY" ==| 親オブジェクトがバージョン管理された場合の振舞い。
+jcrProtected (true | false) "false"  ==| このコレクションが保護されるかどうか。
+jcrSameNameSiblings (true | false) "false"  ==| 同名を許可するか否か
+</code></pre>
+
+<blockquote><p>```</p></blockquote>
+
+<h1>Converter</h1>
+
+<h2>Atomic</h2>
+
+<p><div><script src='https://gist.github.com/2822695.js?file='></script>
+<noscript><pre><code>@Node
+public class Atomic
+{	
+	@Field(path=true) protected String path;
+	@Field private String string;
+	@Field private Boolean booleanObject;
+	@Field private boolean booleanPrimitive;
+	@Field private Integer integerObject;
+	@Field private int intPrimitive;
+	@Field private byte[] byteArray;
+	@Field private Calendar calendar;
+	@Field private Date date;
+	@Field private Double doubleObject;
+	@Field private double doublePrimitive;
+	@Field private InputStream inputStream;
+	@Field private Timestamp timestamp;
+	
+	@Field (converter = Int2BooleanTypeConverterImpl.class)
+	private boolean int2boolean;
+
+	@Field (converter = NameTypeConverterImpl.class)
+    private String namedProperty;
+
+    @Field (converter = PathTypeConverterImpl.class)
+    private String pathProperty; // used to refer another node
+
+    @Field (converter = UndefinedTypeConverterImpl.class)
+    private Object undefinedProperty;
+</code></pre></noscript></div>
+</p>
+
+<h2>Atomic Type Converter</h2>
+
+<h3>インターフェース</h3>
+
+<p> <div><script src='https://gist.github.com/2822741.js?file='></script>
+<noscript><pre><code>package org.apache.jackrabbit.ocm.manager.atomictypeconverter;
+
+import javax.jcr.Value;
+import javax.jcr.ValueFactory;
+
+/**
+ *
+ * AtomicTypeConverter interface.
+ *
+ * The Object converter used atomic type converters to map atomic fields to JCR Value objects.
+ * Amotic fields are primitive java types and their wrapper classes.
+ *
+ *
+ * @author &lt;a href=&quot;mailto:christophe.lombart@sword-technologies.com&quot;&gt;Christophe Lombart&lt;/a&gt;
+ * @author &lt;a href='mailto:the_mindstorm[at]evolva[dot]ro'&gt;Alexandru Popescu&lt;/a&gt;
+ */
+public interface AtomicTypeConverter
+{
+	/**
+	 * Convert an object into a JCR value.
+	 *
+     * @param valueFactory The JCR ValueFactory
+	 * @param object The object to convert
+	 * @return the corresponding JCR value
+	 *
+	 */
+	public Value getValue(ValueFactory valueFactory, Object object);
+
+	/**
+	 * Convert a jcr property value into an object
+	 *
+	 * @param value The JCR property value
+	 * @return the corresponding object	
+	 */
+	public Object getObject(Value value);
+	
+	/**
+	 * Get the string converted value. This is mainly used to build xpath expressions
+	 *
+	 * @param valueFactory The JCR ValueFactory
+	 * @param object The object value
+	 * @return The string converted value	
+	 */
+	public String getXPathQueryValue(ValueFactory valueFactory, Object object);
+}
+</code></pre></noscript></div>
+</p>
+
+<h3>実装例</h3>
+
+<p> <div><script src='https://gist.github.com/2822770.js?file='></script>
+<noscript><pre><code>package org.apache.jackrabbit.ocm.manager.atomictypeconverter.impl;
+
+import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
+import javax.jcr.ValueFactory;
+
+import org.apache.jackrabbit.ocm.exception.IncorrectAtomicTypeException;
+import org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverter;
+
+/**
+ *
+ *  Name Type Converter
+ *
+ * @author &lt;a href=&quot;mailto:christophe.lombart@gmail.com&quot;&gt;Christophe Lombart&lt;/a&gt;
+ *
+ */
+public class PathTypeConverterImpl implements AtomicTypeConverter
+{
+	/**
+	 *
+	 * @see org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverter#getValue(java.lang.Object)
+	 */
+	public Value getValue(ValueFactory valueFactory, Object propValue)
+	{
+		try
+		{
+			if (propValue == null)
+			{
+				return null;
+			}
+			return valueFactory.createValue((String) propValue, PropertyType.PATH);
+		}
+		catch (RepositoryException e)
+		{
+			throw new IncorrectAtomicTypeException(&quot;Impossible to convert the value into a path property : &quot; + propValue.toString() + &quot;. Check if it is a valid path.&quot;, e);
+		}
+		
+	}
+
+    /**
+     *
+     * @see org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverter#getObject(javax.jcr.Value)
+     */
+	public Object getObject(Value value)
+    {
+		try
+		{
+			return value.getString();
+		}
+		catch (RepositoryException e)
+		{
+			throw new IncorrectAtomicTypeException(&quot;Impossible to convert the path into a string&quot;, e);
+		}
+
+	}
+	
+	/**
+	 *
+	 * @see org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverter#getStringValue(java.lang.Object)
+	 */
+	public String getXPathQueryValue(ValueFactory valueFactory, Object object)
+	{
+		return &quot;'&quot; + object.toString() + &quot;'&quot;;
+	}
+}
+</code></pre></noscript></div>
+</p>
+
+<h2>Bean Converter</h2>
+
+<p> <div><script src='https://gist.github.com/2829877.js?file='></script>
+<noscript><pre><code>package org.apache.jackrabbit.ocm.manager.beanconverter;
+
+
+import javax.jcr.Node;
+import javax.jcr.Session;
+
+import org.apache.jackrabbit.ocm.exception.JcrMappingException;
+import org.apache.jackrabbit.ocm.exception.ObjectContentManagerException;
+import org.apache.jackrabbit.ocm.exception.RepositoryException;
+import org.apache.jackrabbit.ocm.manager.beanconverter.impl.ParentBeanConverterImpl;
+import org.apache.jackrabbit.ocm.mapper.model.BeanDescriptor;
+import org.apache.jackrabbit.ocm.mapper.model.ClassDescriptor;
+
+/**
+ * Interface describing a custom bean converter.
+ *
+ * @author &lt;a href='mailto:the_mindstorm[at]evolva[dot]ro'&gt;Alexandru Popescu&lt;/a&gt;
+ */
+public interface BeanConverter {
+	
+	
+    /**
+     * Insert the object.
+     *
+     * @param session the JCR session
+     * @param parentNode The node which will contain the converter bean
+     * @param beanDescriptor The bean descriptor
+     * @param beanClassDescriptor the Class Descriptor associated to the bean to insert
+     * @param bean the bean to convert( insert into the JCR structure)
+     * @param parentClassDescriptor The Class Descriptor associated to the parent object
+     * @param parent the object which will contain the bean to convert
+     *
+     * @throws ObjectContentManagerException thrown in case the insert fails; marks a failure due to logic of
+     *  the insert (parent node cannot be accessed, the insert fails, etc.)
+     * @throws RepositoryException thrown in case the underlying repository has thrown a
+     *  &lt;code&gt;javax.jcr.RepositoryException&lt;/code&gt; that is not possible to be handled or
+     *  wrapped in ObjectContentManagerException; marks a repository failure
+     * @throws JcrMappingException throws in case the mapping of the bean is not correct
+     */
+    void insert(Session session, Node parentNode, BeanDescriptor beanDescriptor, ClassDescriptor beanClassDescriptor, Object bean, ClassDescriptor parentClassDescriptor, Object parent)
+    throws ObjectContentManagerException, RepositoryException, JcrMappingException;
+
+    /**
+     * Update repository from bean values.
+     *
+     * @param session the JCR session
+     * @param parentNode The node which will contain the converter bean
+     * @param beanDescriptor The bean descriptor
+     * @param beanClassDescriptor the Class Descriptor associated to the bean to update
+     * @param bean the bean to convert( insert into the JCR structure)
+     * @param parentClassDescriptor The Class Descriptor associated to the parent object
+     * @param parent the object which will contain the bean to convert
+     *
+     * @throws ObjectContentManagerException thrown in case the update fails; marks a failure due to logic
+     *  of update (parent node cannot be accessed, the update fails, etc.)
+     * @throws RepositoryException thrown in case the underlying repository has thrown a
+     *  &lt;code&gt;javax.jcr.RepositoryException&lt;/code&gt; that is not possible to be handled or
+     *  wrapped in ObjectContentManagerException; marks a repository failure
+     * @throws JcrMappingException throws in case the mapping of the bean is not correct
+     */
+    void update(Session session, Node parentNode, BeanDescriptor beanDescriptor, ClassDescriptor beanClassDescriptor, Object bean, ClassDescriptor parentClassDescriptor, Object parent)
+    throws ObjectContentManagerException, RepositoryException, JcrMappingException;
+
+    /**
+     * Retrieve a bean from the repository.
+     *
+     * @param session the JCR session
+     * @param parentNode The parent node
+     * @param beanDescriptor The bean descriptor
+     * @param beanClassDescriptor the Class Descriptor associated to the bean to insert
+     * @param beanClass The bean Class
+     * @param parent The parent which contain the bean to retrieve
+     *
+     * @throws ObjectContentManagerException thrown in case the bean cannot be retrieved or initialized;
+     *  marks a failure due to logic of retrieval
+     * @throws RepositoryException thrown in case the underlying repository has thrown a
+     *  &lt;code&gt;javax.jcr.RepositoryException&lt;/code&gt; that is not possible to be handled or
+     *  wrapped in ObjectContentManagerException; marks a repository failure
+     * @throws JcrMappingException throws in case the mapping of the bean is not correct
+     */
+    Object getObject(Session session, Node parentNode, BeanDescriptor beanDescriptor, ClassDescriptor beanClassDescriptor, Class beanClass, Object parent)
+    throws ObjectContentManagerException, RepositoryException, JcrMappingException;
+
+
+    /**
+     * Remove the bean from the repository.
+     *
+     * @param session the JCR session
+     * @param parentNode The node which will contain the converter bean
+     * @param beanDescriptor The bean descriptor
+     * @param beanClassDescriptor the Class Descriptor associated to the bean to update
+     * @param bean the bean to convert( insert into the JCR structure)
+     * @param parentClassDescriptor The Class Descriptor associated to the parent object
+     * @param parent the object which contains the bean to convert
+     *
+     * @throws ObjectContentManagerException thrown in case the bean cannot be removed;
+     *  marks a failure due to logic of removal
+     * @throws RepositoryException thrown in case the underlying repository has thrown a
+     *  &lt;code&gt;javax.jcr.RepositoryException&lt;/code&gt; that is not possible to be handled or
+     *  wrapped in ObjectContentManagerException; marks a repository failure
+     * @throws JcrMappingException throws in case the mapping of the bean is not correct
+     */
+    void remove(Session session, Node parentNode,  BeanDescriptor beanDescriptor, ClassDescriptor beanClassDescriptor, Object bean, ClassDescriptor parentClassDescriptor, Object parent)
+    throws ObjectContentManagerException, RepositoryException, JcrMappingException;
+
+    /**
+     * Get the bean path.
+     *
+     * When the bean is mapped to a subnode, the bean path is the parent node path + the jcrname of the current bean.
+     * Sometime a BeanConverter can be used to access to a bean which is not mapped to a subnode. In this case,
+     * another implementation can be provided in this method getPath. {@link  ParentBeanConverterImpl} is a good example.
+     *
+     * @param session the JCR session
+     * @param beanDescriptor The descriptor of the bean to convert
+     * @param parentNode the node which contain this bean (its corresponfing subnode)
+     * @return the bean path
+     *
+     * @throws RepositoryException thrown in case the underlying repository has thrown a
+     *  &lt;code&gt;javax.jcr.RepositoryException&lt;/code&gt; that is not possible to be handled or
+     *  wrapped in ObjectContentManagerException; marks a repository failure
+     *
+     */
+    String getPath(Session session, BeanDescriptor beanDescriptor, Node parentNode)
+    throws ObjectContentManagerException;
+
+
+}
+</code></pre></noscript></div>
+</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Jackrabbit OCM]]></title>
+    <link href="http://k2n.github.com/blog/2012/05/28/jackrabbit-ocm/"/>
+    <updated>2012-05-28T15:33:00-07:00</updated>
+    <id>http://k2n.github.com/blog/2012/05/28/jackrabbit-ocm</id>
+    <content type="html"><![CDATA[<p><a href="http://jackrabbit.apache.org/object-content-mapping.html">Jackrabbit OCM</a>より抄訳。</p>
+
+<h1>概要</h1>
+
+<ul>
+<li>Jackrabbit OCMは、コンテンツリポジトリである<a href="http://jcp.org/en/jsr/detail?id=283">JCR</a>をバックエンドとした、オブジェクト・パーシステンス・フレームワークである。</li>
+<li><a href="http://goo.gl/37r7v">関連</a>、<a href="http://goo.gl/OIbxv">インヘリタンス</a>、<a href="http://goo.gl/Zp8ei">ポリモーフィズム</a>、<a href="http://goo.gl/pfldW">コンポジション</a>、<a href="http://goo.gl/LWTef">Javaコレクションフレームワーク</a>をサポートする。</li>
+<li>JCRの機能を活用した、バージョンサポートを提供。</li>
+<li>オブジェクトロック</li>
+<li>Javaベースのcriteria、またはJCRクエリ言語によるクエリサポート</li>
+<li>JCR準拠リポジトリ上で、例えばフォーラムアプリケーションであれば、<code>Forum</code>, <code>Topic</code>, <code>Post</code>といったオブジェクトをPOJOとして表現し、JCRマッピングツールを用いて永続化することができる。</li>
+</ul>
+
+
+<h1>なぜOCMが必要なのか</h1>
+
+<ul>
+<li>UIへの表示など、単純なユースケースではJCRのノードとプロパティのモデルは非常に便利だが、ビジネスロジックを記述する量が増えてくるとJCR APIでは低レベルすぎ、POJOレベルで扱うほうが適しているから。</li>
+<li>OCMフレームワークはコンテンツを永続化するための高レベルインターフェースを提供し、JCR APIへの依存性を低めることができる。</li>
+<li>OJBやHibernateなどのORMツールは、コンテンツ指向のアプリケーションには適していない。</li>
+</ul>
+
+
+<h1>Object Content Manager</h1>
+
+<ul>
+<li>OCMフレームワークの主要コンポーネント。</li>
+<li>ObjectContentManagerはオブジェクトグラフをJCRノードとプロパティに変換、またはその逆を行う。</li>
+<li>ObjectContentManagerはJCR Sessionインスタンスと関連付けられている。</li>
+<li>JCRリポジトリに対するオブジェクトの取得、作成、更新、削除を行うことができる。</li>
+<li>通常、１ユーザーセッションに対して１つのObjectContentManagerインスタンスが存在する。</li>
+</ul>
+
+
+<h2>Object Content Managerの動作原理</h2>
+
+<ul>
+<li>Mapping Descriptorが、それぞれのPOJOをどのようにマッピングして永続化するかをObjectContentManagerに指示する。</li>
+<li>永続クラスごとに、Class Descriptorが用意され、クラス属性のマッピング情報を保持する。</li>
+<li>Mapping Descriptorの実装として、下記の二種類が今のところ提供されている。
+
+<ul>
+<li>Annotation: 永続クラスにマッピング情報がアノテーションとして記述されている。(org.apache.jackrabbit.ocm.mapper.impl.annotation.AnnotationMapperImpl)</li>
+<li>XML: Class DescriptorはXMLとしても記述可能。(org.apache.jackrabbit.ocm.mapper.impl.digester.DigesterMapperImpl)</li>
+</ul>
+</li>
+<li>ユーザーはObjectContentManagerがClass Descriptorをどのように利用しているかを理解する必要はなく、XMLかクラスのアノテーションか、どちらの方法で記述するかさえ決めれば良い。</li>
+</ul>
+
+
+<h2>オブジェクトはどのようにJCRリポジトリへ保存されるのか</h2>
+
+<ul>
+<li>永続オブジェクトはJCRノードにマップされ、フィールドは種類によりサブノードかプロパティにマップされる。フィールドタイプには３種類ある。
+
+<ul>
+<li>アトミックフィールド: PrimitiveタイプとString, Long, Doubleなどのシンプルなオブジェクト。これらのフィールドはJCRプロパティにマップされる。</li>
+<li>Beanフィールド: クラスは他のBeanと1対1の関連を持つことができる。この場合、フィールドはカスタムオブジェクトである。このオブジェクトのフィールドはJCRサブノードか参照ノードとしてマップされる。</li>
+<li>コレクションフィールド: クラスはBeanのコレクション（かMap）に対して1対多の関連を持つことができる。これらのフィールドはJCRサブノードのコレクションか、参照ノードのコレクションにマップされる。また、あるJavaコレクションを、マルチバリューのプロパティにマップすることも可能である。</li>
+</ul>
+</li>
+</ul>
+
+
+<p>Mapping Descriptorは継承、インターフェースマッピングストラテジー、遅延ローディング、カスタムコンバーター、キャッシュステラテジーについての情報も含んでいる。</p>
+
+<h2>アノテーション永続クラスによる基本設定</h2>
+
+<p>``` java
+import javax.jcr.Session;
+import javax.jcr.Repository;</p>
+
+<p>import org.apache.jackrabbit.ocm.manager.impl.ObjectContentManagerImpl;
+import org.apache.jackrabbit.ocm.mapper.Mapper;
+import org.apache.jackrabbit.ocm.mapper.impl.annotation.AnnotationMapperImpl;</p>
+
+<p>// 1. JCR sessionのインスタンス化
+Repository repository = ...;
+Session session = repository.login(...);</p>
+
+<p>// 2. 複数の永続クラスを登録する
+List classes = new ArrayList();
+classes.add(MyContent.class); // それぞれの永続クラスに対してこのメソッドを呼び出す</p>
+
+<p>// 3. Object Content Managerのインスタンス化
+Mapper mapper = new AnnotationMapperImpl(classes);
+ObjectContentManager ocm = new ObjectContentManagerImpl(session, mapper);
+```</p>
+
+<h2>XMLでMapping Descriptorを定義した場合の基本設定</h2>
+
+<p>``` java
+import javax.jcr.Session;
+import javax.jcr.Repository;</p>
+
+<p>import org.apache.jackrabbit.ocm.mapper.Mapper;
+import org.apache.jackrabbit.ocm.mapper.impl.digester.DigesterMapperImpl;
+import org.apache.jackrabbit.ocm.manager.ObjectContentManager;
+import org.apache.jackrabbit.ocm.manager.impl.ObjectContentManagerImpl;
+import org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverterProvider;
+import org.apache.jackrabbit.ocm.manager.atomictypeconverter.impl.DefaultAtomicTypeConverterProvider;
+import org.apache.jackrabbit.ocm.manager.objectconverter.ObjectConverter;
+import org.apache.jackrabbit.ocm.manager.objectconverter.impl.ObjectConverterImpl;
+import org.apache.jackrabbit.ocm.query.QueryManager;
+import org.apache.jackrabbit.ocm.query.impl.QueryManagerImpl;</p>
+
+<p>// 1. JCR Sessionのインスタンス化
+Repository repository = ...;
+Session session = repository.login(...);</p>
+
+<p>// 2. 複数のマッピングファイルを定義
+String[] files = {</p>
+
+<pre><code>  "./src/test-config/jcrmapping.xml",
+  "./src/test-config/jcrmapping-atomic.xml",
+  "./src/test-config/jcrmapping-beandescriptor.xml"
+</code></pre>
+
+<p>  };</p>
+
+<p>// 3. object content managerのインスタンス化
+ObjectContentManager ocm = new ObjectContentManagerImpl(session, files);
+```</p>
+
+<h1>OCMの基本操作</h1>
+
+<ul>
+<li>下記の例では、Folderクラスは永続クラスで、アノテーションかXMLでclass descriptorが定義されているものとする。</li>
+</ul>
+
+
+<h2>インサート</h2>
+
+<p>``` java
+Folder folder = new Folder();
+folder.setPath("/myfolder");
+folder.set...(); // setterメソッドを呼んで値を設定</p>
+
+<p>ocm.insert(folder);
+...
+ocm.save();
+```</p>
+
+<h2>オブジェクトの取得と更新</h2>
+
+<p>``` java
+Folder folder = (Folder) ocm.getObject(Folder.class, "/myfolder");
+folder.set...(); // setterで値を更新</p>
+
+<p>ocm.update(folder);
+...
+ocm.save();
+```</p>
+
+<h2>オブジェクトの削除</h2>
+
+<p><code>java
+ocm.remove("/myfolder");
+...
+ocm.save();
+</code></p>
+
+<h1>OCMの検索</h1>
+
+<ul>
+<li>下記の例で用いられる永続クラス Paragraph.java
+<div><script src='https://gist.github.com/2822124.js?file='></script>
+<noscript><pre><code>package org.apache.jackrabbit.ocm.testmodel;
+
+import org.apache.jackrabbit.ocm.manager.beanconverter.impl.ParentBeanConverterImpl;
+import org.apache.jackrabbit.ocm.mapper.impl.annotation.Bean;
+import org.apache.jackrabbit.ocm.mapper.impl.annotation.Field;
+import org.apache.jackrabbit.ocm.mapper.impl.annotation.Node;
+
+/**
+ *
+ * @author &lt;a href=&quot;mailto:christophe.lombart@gmail.com&quot;&gt;Christophe Lombart&lt;/a&gt;
+ *
+ */
+@Node(jcrType=&quot;ocm:paragraph&quot;, discriminator=false)
+public class Paragraph
+{
+    @Field(path=true) private String path;
+	@Field(jcrName=&quot;ocm:text&quot;) private String text;
+	
+    // The converter ParentBeanConverterImpl can be used to have a simple reference
+	// to the page containing this pararaph (parent node) - cannot be updated
+	@Bean(proxy=true, converter=ParentBeanConverterImpl.class) private Page page;
+	
+    public String getPath()
+    {
+		return path;
+	}
+
+	public void setPath(String path)
+	{
+		this.path = path;
+	}
+
+	public Paragraph()
+    {
+        this.text = &quot;Default text&quot;;
+    }
+
+    public Paragraph(String text)
+    {
+        this.text = text;
+    }
+
+    /**
+     * @return Returns the text.
+     */
+    public String getText()
+    {
+        return text;
+    }
+
+    /**
+     * @param text The text to set.
+     */
+    public void setText(String text)
+    {
+        this.text = text;
+    }
+
+	public Page getPage()
+	{
+		return page;
+	}
+
+	public void setPage(Page page) {
+		this.page = page;
+	}
+
+	
+
+
+}
+</code></pre></noscript></div>
+</li>
+</ul>
+
+
+<h2>単一オブジェクトの検索</h2>
+
+<p>``` java
+QueryManager queryManager = ocm.getQueryManager();</p>
+
+<p>// サーチフィルタの組立て
+Filter filter = queryManager.createFilter(Paragraph.class); // Paragraph.classは永続オブジェクト
+filter.addEqualTo("text", "Para 1"); // @Fieldアノテーションでマッピングが定義されている</p>
+
+<p>// クエリの組立て
+Query query = queryManager.createQuery(filter);
+Paragraph paragraph = (Paragraph) ocm.getObject(query);
+```</p>
+
+<h2>コレクションの検索</h2>
+
+<p><code>java
+QueryManager queryManager = ocm.getQueryManager();
+Filter filter = queryManager.createFilter(Paragraph.class);
+/*
+ * /mynode/mysecondnode/'の場合、/mynode/mysecondnodeの子要素（孫以下を含まない）を検索
+ * /mynode/mysecondnode//'の場合、 /mynode/mysecondnodeの子孫要素全てを検索
+ */
+filter.setScope("/test/node1//");
+Query query = queryManager.createQuery(filter);
+Collection result = ocm.getObjects(query);
+</code></p>
+
+<h2>イタレータを用いた検索</h2>
+
+<p><code>java
+QueryManager queryManager = ocm.getQueryManager();
+Filter filter = queryManager.createFilter(Paragraph.class);
+filter.setScope("/test/node1//");
+Query query = queryManager.createQuery(filter);
+Iterator iterator = ocm.getObjectIterator(query);
+</code></p>
+
+<h2>クエリによる削除</h2>
+
+<p><code>java
+QueryManager queryManager = ocm.getQueryManager();
+Filter filter = queryManager.createFilter(Paragraph.class);
+filter.setScope("/test/node1//");
+Query query = queryManager.createQuery(filter);
+ocm.remove(query);
+</code></p>
+
+<h1>OCM ロッキング</h1>
+
+<p>JCRスペック8.4に基づき、ノードとその子供をロックすることができる。OCM APIを使ってオブジェクトレベルでロックすることができる。ロックするためには、<code>mix:lockable</code> mixinタイプを宣言する必要がある。これはClass Descriptor内で宣言することが可能である。</p>
+
+<p>``` java mix:lockableの宣言例
+@Node(jcrMixinTypes="mix:lockable" )
+public class A
+{</p>
+
+<pre><code>@Field(path=true) private String path;
+@Field private String a1;
+@Field private String a2;
+@Bean(jcrType="nt:unstructured", jcrOnParentVersion="IGNORE") private B b;
+
+private B emptyB;
+</code></pre>
+
+<p>...
+```</p>
+
+<h2>基本例</h2>
+
+<p>``` java
+// --------------------------------------------------------------------------------
+// Create and store an object graph in the repository
+// --------------------------------------------------------------------------------
+A a = new A();
+a.setPath("/test");
+a.setA1("a1");
+a.setA2("a2");
+B b = new B();
+b.setB1("b1");
+b.setB2("b2");
+a.setB(b);</p>
+
+<p>C c1 = new C();
+c1.setId("first");
+c1.setName("First Element");
+C c2 = new C();
+c2.setId("second");
+c2.setName("Second Element");</p>
+
+<p>C c3 = new C();
+c3.setId("third");
+c3.setName("Third Element");</p>
+
+<p>Collection collection = new ArrayList();
+collection.add(c1);
+collection.add(c2);
+collection.add(c3);</p>
+
+<p>a.setCollection(collection);</p>
+
+<p>ocm.insert(a);
+ocm.save();</p>
+
+<p>// --------------------------------------------------------------------------------
+// Check if the object is not locked
+// --------------------------------------------------------------------------------
+if (ocm.isLocked("/test"))
+{</p>
+
+<pre><code>   System.out.println("Error : The object is locked- humm ??");
+</code></pre>
+
+<p>}</p>
+
+<p>// --------------------------------------------------------------------------------
+// Lock the object
+// --------------------------------------------------------------------------------</p>
+
+<pre><code>/*
+ * Lock object saved on {@param path }.
+ *
+ * @param path
+ *            path to saved object.
+ * @param isDeep
+ *            is lock deep? See JCR spec: 8.4.3 Shallow and Deep Locks
+ *            Shallow lockは該当ノードのみロック。Deepロックはサブグラフまで含めてロック。
+ *            JCR Ver.2では17.2にて定義されている。
+ * @param isSessionScoped
+ *            is lock session scoped? See JCR spec: Session-scoped and
+ *            Open-scoped Locks
+ *            Session scope lockはSessionがexpireしたタイミングでロックが解除される。
+ *            Open scopeはタイムアウトか明示的に解除するまでロックが保持される。
+ *            JCR 2では17.6で定義されている。
+ * @return lock - Wrapper object for a JCR lock
+ *
+ * @throws LockedException
+ *             if path is locked (cannot lock same path again)
+ */
+</code></pre>
+
+<p>String lockToken = ocm.lock("/test", true, false);</p>
+
+<p>// --------------------------------------------------------------------------------
+// Check if the object is not locked
+// --------------------------------------------------------------------------------
+if (! ocm.isLocked("/test"))
+{</p>
+
+<pre><code>   System.out.println("Error : The object is not locked- humm ??");
+</code></pre>
+
+<p>}</p>
+
+<p>// --------------------------------------------------------------------------------
+// Unlock the object
+// --------------------------------------------------------------------------------
+ocm.unlock("/test", lockToken);
+```</p>
+
+<h1>OCMバージョン管理</h1>
+
+<p>現状では、OCMツールは基本的なバージョン機能を提供している。</p>
+
+<ul>
+<li>チェックイン、チェックアウト</li>
+<li>バージョン履歴の取得（最初のバージョン、最新バージョン、完全な履歴）</li>
+<li>ラベルの適用</li>
+</ul>
+
+
+<p>将来的にはバージョン間比較、置換、回復などの機能も追加される予定である。バージョン管理されるオブジェクトは<code>mix:versionable</code>をマップする必要がある。これはXMLかアノテーションで定義可能である。</p>
+
+<h2>チェックイン、チェックアウト</h2>
+
+<p>``` java
+// 初期バージョンの作成
+Page page = new Page();
+page.setPath("/page");
+page.setTile("Page Title");
+page.addParagraph(new Paragraph("para1"));
+page.addParagraph(new Paragraph("para2"));
+ocm.insert(page);
+ocm.save();</p>
+
+<p>// pageオブジェクトを更新し、新しいバージョンを作る
+page.addParagraph(new Pargraph("para3"));
+ocm.checkout("/page");
+ocm.update(page);
+ocm.save();
+ocm.checkin("/page");</p>
+
+<p>// pageオブジェクトを更新し、新しいバージョンを作る
+page.addParagraph(new Pargraph("para4"));
+ocm.checkout("/page");
+ocm.update(page);
+ocm.save();
+ocm.checkin("/page");
+```</p>
+
+<h2>バージョン履歴の取得</h2>
+
+<p>``` java
+VersionIterator versionIterator = ocm.getAllVersions("/page");
+while (versionIterator.hasNext()) {</p>
+
+<pre><code>Version version = (Version) versionIterator.next();
+System.out.println("version found : " + version.getName() + " - " + version.getPath() + " - " + version.getCrated().getTime()));
+</code></pre>
+
+<p>}
+```</p>
+
+<h2>バージョン内容の取得</h2>
+
+<p>``` java
+// 初期バージョンの説明を取得
+Version baseVersion = ocm.getBaseVersion("/page");
+System.out.println("Base version : " + baseVersion.gateName());</p>
+
+<p>// 最新バージョンの説明を取得
+Version rootVersion = ocm.getRootVersion("/page");
+System.out.println("Root version : " + rootVersion.gateName());
+```</p>
+
+<h2>特定のバージョンのオブジェクトを取得</h2>
+
+<p><code>java
+// 初期バージョンのオブジェクトを取得する
+Page page = (Page) ocm.getObject("/page", "1.0");
+</code></p>
+
+<h2>バージョンラベルの使用</h2>
+
+<p>``` java
+Page page = new Page();
+page.setPath("/page");
+page.setTitle("Page Title");
+page.addParagraph(new Paragraph("para1"));
+page.addParagraph(new Paragraph("para2"));
+ocm.insert(page);
+ocm.save();</p>
+
+<p>// ラベルと共にチェックイン
+page.addParagraph(new Paragraph("para3"));
+ocm.checkout("/page");
+ocm.update(page);
+ocm.save();
+ocm.checkin("/page", new String[] {"A", "B"});</p>
+
+<p>// ラベルと共にチェックイン
+page.addParagraph(new Paragraph("para4"));
+ocm.checkout("/page");
+ocm.update(page);
+ocm.save();
+ocm.checkin("/page", new String[] {"C", "D"});</p>
+
+<p>// ラベルを全て取得
+String[] allLabels = ocm.geAllVersionLabels("/page");
+assertTrue("incorrect number of labesl", allLrables.length == 4);</p>
+
+<p>// version 1.1にアサインされたラベルを取得
+String[] versionLabels = ocm.getVersionLables("/page", "1.1");
+assertTrue("incorrect number of labels", versionLabels.length == 2);
+assertTrue("incorrect label", versionLabels[0].equals("C") || versionLables[0].equals("D"));
+assertTrue("incorrect label", versionLabels[1].equals("C") || versionLables[1].equals("D"));
+```</p>
+
+<h1>マッピングストラテジー</h1>
+
+<h2>オブジェクトモデル</h2>
+
+<p>例として、下記のモデルを定義する。<code>PageInfo</code>クラスは<code>Bean</code>マッピングを例示するために作られたもので、モデリングの観点からは<code>Page</code>クラスから分離する意義はない。</p>
+
+<p><img src="http://jackrabbit.apache.org/mapping-stategies.data/sample-model-doc.png"></p>
+
+<p>``` java Page.java
+public class Page
+{
+  String path;
+  PageInfo pageInfo;
+  Collection paragraphs;</p>
+
+<p>  /<em>  Add here the getter and setter methods </em>/</p>
+
+<p>  public void addParagraph(Paragraph paragraph)
+  {</p>
+
+<pre><code>if (paragraphs == null)
+{
+  paragraphs = new ArrayList();
+}
+
+paragraphs.add(paragraph);
+</code></pre>
+
+<p>  }
+}
+```</p>
+
+<p>``` java PageInfo.java
+public class PageInfo
+{
+  String path;
+  String title;
+  String description;</p>
+
+<p>  /<em>  Add here the getter and setter methods </em>/</p>
+
+<p>}
+<code>
+</code> java Paragraph.java
+public class Paragraph
+{
+  private String path;
+  private String text;</p>
+
+<p>  /<em> Add here the getter and setter methods </em>/</p>
+
+<p>}
+```</p>
+
+<h2>JCR ツリー構造</h2>
+
+<p>２パラグラフを含むページを<code>/mysite/mypage1</code>に登録した場合の構造。
+```
+/mysite/page1
+  /mysite/page1/pageInfo</p>
+
+<pre><code>my:title = "This is my page title" ==&gt; atomicフィールドはプロパティ
+my:description = "This is my page description"
+</code></pre>
+
+<p>  /mysite/page1/paragraphs ==> コレクションの要素がサブノードとして登録されている</p>
+
+<pre><code>/mysite/page1/paragraphs/paragraph1
+  my:text = "This is the content of para1"
+/mysite/page1/paragraphs/paragraph2
+  my:text = "This is the content of para2"
+</code></pre>
+
+<p>```</p>
+
+<h1>Class Descriptor</h1>
+
+<h2>Atomic</h2>
+
+<p><div><script src='https://gist.github.com/2822695.js?file='></script>
+<noscript><pre><code>@Node
+public class Atomic
+{	
+	@Field(path=true) protected String path;
+	@Field private String string;
+	@Field private Boolean booleanObject;
+	@Field private boolean booleanPrimitive;
+	@Field private Integer integerObject;
+	@Field private int intPrimitive;
+	@Field private byte[] byteArray;
+	@Field private Calendar calendar;
+	@Field private Date date;
+	@Field private Double doubleObject;
+	@Field private double doublePrimitive;
+	@Field private InputStream inputStream;
+	@Field private Timestamp timestamp;
+	
+	@Field (converter = Int2BooleanTypeConverterImpl.class)
+	private boolean int2boolean;
+
+	@Field (converter = NameTypeConverterImpl.class)
+    private String namedProperty;
+
+    @Field (converter = PathTypeConverterImpl.class)
+    private String pathProperty; // used to refer another node
+
+    @Field (converter = UndefinedTypeConverterImpl.class)
+    private Object undefinedProperty;
+</code></pre></noscript></div>
+</p>
+
+<h2>Atomic Type Converter</h2>
+
+<h3>インターフェース</h3>
+
+<p> <div><script src='https://gist.github.com/2822741.js?file='></script>
+<noscript><pre><code>package org.apache.jackrabbit.ocm.manager.atomictypeconverter;
+
+import javax.jcr.Value;
+import javax.jcr.ValueFactory;
+
+/**
+ *
+ * AtomicTypeConverter interface.
+ *
+ * The Object converter used atomic type converters to map atomic fields to JCR Value objects.
+ * Amotic fields are primitive java types and their wrapper classes.
+ *
+ *
+ * @author &lt;a href=&quot;mailto:christophe.lombart@sword-technologies.com&quot;&gt;Christophe Lombart&lt;/a&gt;
+ * @author &lt;a href='mailto:the_mindstorm[at]evolva[dot]ro'&gt;Alexandru Popescu&lt;/a&gt;
+ */
+public interface AtomicTypeConverter
+{
+	/**
+	 * Convert an object into a JCR value.
+	 *
+     * @param valueFactory The JCR ValueFactory
+	 * @param object The object to convert
+	 * @return the corresponding JCR value
+	 *
+	 */
+	public Value getValue(ValueFactory valueFactory, Object object);
+
+	/**
+	 * Convert a jcr property value into an object
+	 *
+	 * @param value The JCR property value
+	 * @return the corresponding object	
+	 */
+	public Object getObject(Value value);
+	
+	/**
+	 * Get the string converted value. This is mainly used to build xpath expressions
+	 *
+	 * @param valueFactory The JCR ValueFactory
+	 * @param object The object value
+	 * @return The string converted value	
+	 */
+	public String getXPathQueryValue(ValueFactory valueFactory, Object object);
+}
+</code></pre></noscript></div>
+</p>
+
+<h3>実装例</h3>
+
+<p> <div><script src='https://gist.github.com/2822770.js?file='></script>
+<noscript><pre><code>package org.apache.jackrabbit.ocm.manager.atomictypeconverter.impl;
+
+import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
+import javax.jcr.ValueFactory;
+
+import org.apache.jackrabbit.ocm.exception.IncorrectAtomicTypeException;
+import org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverter;
+
+/**
+ *
+ *  Name Type Converter
+ *
+ * @author &lt;a href=&quot;mailto:christophe.lombart@gmail.com&quot;&gt;Christophe Lombart&lt;/a&gt;
+ *
+ */
+public class PathTypeConverterImpl implements AtomicTypeConverter
+{
+	/**
+	 *
+	 * @see org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverter#getValue(java.lang.Object)
+	 */
+	public Value getValue(ValueFactory valueFactory, Object propValue)
+	{
+		try
+		{
+			if (propValue == null)
+			{
+				return null;
+			}
+			return valueFactory.createValue((String) propValue, PropertyType.PATH);
+		}
+		catch (RepositoryException e)
+		{
+			throw new IncorrectAtomicTypeException(&quot;Impossible to convert the value into a path property : &quot; + propValue.toString() + &quot;. Check if it is a valid path.&quot;, e);
+		}
+		
+	}
+
+    /**
+     *
+     * @see org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverter#getObject(javax.jcr.Value)
+     */
+	public Object getObject(Value value)
+    {
+		try
+		{
+			return value.getString();
+		}
+		catch (RepositoryException e)
+		{
+			throw new IncorrectAtomicTypeException(&quot;Impossible to convert the path into a string&quot;, e);
+		}
+
+	}
+	
+	/**
+	 *
+	 * @see org.apache.jackrabbit.ocm.manager.atomictypeconverter.AtomicTypeConverter#getStringValue(java.lang.Object)
+	 */
+	public String getXPathQueryValue(ValueFactory valueFactory, Object object)
+	{
+		return &quot;'&quot; + object.toString() + &quot;'&quot;;
+	}
+}
+</code></pre></noscript></div>
+</p>
+
+<h2>Bean Converter</h2>
+
+<p> <div><script src='https://gist.github.com/2829877.js?file='></script>
+<noscript><pre><code>package org.apache.jackrabbit.ocm.manager.beanconverter;
+
+
+import javax.jcr.Node;
+import javax.jcr.Session;
+
+import org.apache.jackrabbit.ocm.exception.JcrMappingException;
+import org.apache.jackrabbit.ocm.exception.ObjectContentManagerException;
+import org.apache.jackrabbit.ocm.exception.RepositoryException;
+import org.apache.jackrabbit.ocm.manager.beanconverter.impl.ParentBeanConverterImpl;
+import org.apache.jackrabbit.ocm.mapper.model.BeanDescriptor;
+import org.apache.jackrabbit.ocm.mapper.model.ClassDescriptor;
+
+/**
+ * Interface describing a custom bean converter.
+ *
+ * @author &lt;a href='mailto:the_mindstorm[at]evolva[dot]ro'&gt;Alexandru Popescu&lt;/a&gt;
+ */
+public interface BeanConverter {
+	
+	
+    /**
+     * Insert the object.
+     *
+     * @param session the JCR session
+     * @param parentNode The node which will contain the converter bean
+     * @param beanDescriptor The bean descriptor
+     * @param beanClassDescriptor the Class Descriptor associated to the bean to insert
+     * @param bean the bean to convert( insert into the JCR structure)
+     * @param parentClassDescriptor The Class Descriptor associated to the parent object
+     * @param parent the object which will contain the bean to convert
+     *
+     * @throws ObjectContentManagerException thrown in case the insert fails; marks a failure due to logic of
+     *  the insert (parent node cannot be accessed, the insert fails, etc.)
+     * @throws RepositoryException thrown in case the underlying repository has thrown a
+     *  &lt;code&gt;javax.jcr.RepositoryException&lt;/code&gt; that is not possible to be handled or
+     *  wrapped in ObjectContentManagerException; marks a repository failure
+     * @throws JcrMappingException throws in case the mapping of the bean is not correct
+     */
+    void insert(Session session, Node parentNode, BeanDescriptor beanDescriptor, ClassDescriptor beanClassDescriptor, Object bean, ClassDescriptor parentClassDescriptor, Object parent)
+    throws ObjectContentManagerException, RepositoryException, JcrMappingException;
+
+    /**
+     * Update repository from bean values.
+     *
+     * @param session the JCR session
+     * @param parentNode The node which will contain the converter bean
+     * @param beanDescriptor The bean descriptor
+     * @param beanClassDescriptor the Class Descriptor associated to the bean to update
+     * @param bean the bean to convert( insert into the JCR structure)
+     * @param parentClassDescriptor The Class Descriptor associated to the parent object
+     * @param parent the object which will contain the bean to convert
+     *
+     * @throws ObjectContentManagerException thrown in case the update fails; marks a failure due to logic
+     *  of update (parent node cannot be accessed, the update fails, etc.)
+     * @throws RepositoryException thrown in case the underlying repository has thrown a
+     *  &lt;code&gt;javax.jcr.RepositoryException&lt;/code&gt; that is not possible to be handled or
+     *  wrapped in ObjectContentManagerException; marks a repository failure
+     * @throws JcrMappingException throws in case the mapping of the bean is not correct
+     */
+    void update(Session session, Node parentNode, BeanDescriptor beanDescriptor, ClassDescriptor beanClassDescriptor, Object bean, ClassDescriptor parentClassDescriptor, Object parent)
+    throws ObjectContentManagerException, RepositoryException, JcrMappingException;
+
+    /**
+     * Retrieve a bean from the repository.
+     *
+     * @param session the JCR session
+     * @param parentNode The parent node
+     * @param beanDescriptor The bean descriptor
+     * @param beanClassDescriptor the Class Descriptor associated to the bean to insert
+     * @param beanClass The bean Class
+     * @param parent The parent which contain the bean to retrieve
+     *
+     * @throws ObjectContentManagerException thrown in case the bean cannot be retrieved or initialized;
+     *  marks a failure due to logic of retrieval
+     * @throws RepositoryException thrown in case the underlying repository has thrown a
+     *  &lt;code&gt;javax.jcr.RepositoryException&lt;/code&gt; that is not possible to be handled or
+     *  wrapped in ObjectContentManagerException; marks a repository failure
+     * @throws JcrMappingException throws in case the mapping of the bean is not correct
+     */
+    Object getObject(Session session, Node parentNode, BeanDescriptor beanDescriptor, ClassDescriptor beanClassDescriptor, Class beanClass, Object parent)
+    throws ObjectContentManagerException, RepositoryException, JcrMappingException;
+
+
+    /**
+     * Remove the bean from the repository.
+     *
+     * @param session the JCR session
+     * @param parentNode The node which will contain the converter bean
+     * @param beanDescriptor The bean descriptor
+     * @param beanClassDescriptor the Class Descriptor associated to the bean to update
+     * @param bean the bean to convert( insert into the JCR structure)
+     * @param parentClassDescriptor The Class Descriptor associated to the parent object
+     * @param parent the object which contains the bean to convert
+     *
+     * @throws ObjectContentManagerException thrown in case the bean cannot be removed;
+     *  marks a failure due to logic of removal
+     * @throws RepositoryException thrown in case the underlying repository has thrown a
+     *  &lt;code&gt;javax.jcr.RepositoryException&lt;/code&gt; that is not possible to be handled or
+     *  wrapped in ObjectContentManagerException; marks a repository failure
+     * @throws JcrMappingException throws in case the mapping of the bean is not correct
+     */
+    void remove(Session session, Node parentNode,  BeanDescriptor beanDescriptor, ClassDescriptor beanClassDescriptor, Object bean, ClassDescriptor parentClassDescriptor, Object parent)
+    throws ObjectContentManagerException, RepositoryException, JcrMappingException;
+
+    /**
+     * Get the bean path.
+     *
+     * When the bean is mapped to a subnode, the bean path is the parent node path + the jcrname of the current bean.
+     * Sometime a BeanConverter can be used to access to a bean which is not mapped to a subnode. In this case,
+     * another implementation can be provided in this method getPath. {@link  ParentBeanConverterImpl} is a good example.
+     *
+     * @param session the JCR session
+     * @param beanDescriptor The descriptor of the bean to convert
+     * @param parentNode the node which contain this bean (its corresponfing subnode)
+     * @return the bean path
+     *
+     * @throws RepositoryException thrown in case the underlying repository has thrown a
+     *  &lt;code&gt;javax.jcr.RepositoryException&lt;/code&gt; that is not possible to be handled or
+     *  wrapped in ObjectContentManagerException; marks a repository failure
+     *
+     */
+    String getPath(Session session, BeanDescriptor beanDescriptor, Node parentNode)
+    throws ObjectContentManagerException;
+
+
+}
+</code></pre></noscript></div>
+</p>
+]]></content>
+  </entry>
+  
+</feed>
