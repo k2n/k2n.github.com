@@ -4,7 +4,7 @@
   <title><![CDATA[Category: translation | Code Critique]]></title>
   <link href="http://k2n.github.com/blog/categories/translation/atom.xml" rel="self"/>
   <link href="http://k2n.github.com/"/>
-  <updated>2012-05-29T17:07:38-07:00</updated>
+  <updated>2012-05-29T18:50:15-07:00</updated>
   <id>http://k2n.github.com/</id>
   <author>
     <name><![CDATA[Kenji Nakamura]]></name>
@@ -620,6 +620,104 @@ public interface BeanConverter {
 }
 </code></pre></noscript></div>
 </p>
+
+<h2>Collection Converters</h2>
+
+<h3>BeanReferenceCollectionConverterImpl</h3>
+
+<p>Reference/uuidのプロパティリストをJavaコレクションにマップするために用いられる。</p>
+
+<h3>BeanReferenceMapConverterImpl</h3>
+
+<p>Reference/uuidのプロパティをjava.util.Mapにマップする。キーはStringであることが前提で、Map&lt;Object,Object>はサポートされていない。</p>
+
+<h3>DefaultCollectionConverterImpl</h3>
+
+<p><code>jcrName</code>で指定された名称で作られた中間JCRノードの下にコレクションをマップする戦略である。これは<code>nt:unstractured</code>をコレクション要素に適用したい場合に便利である。これにより、コレクション要素と、親オブジェクトの他のフィールドと区別することができるようになる。 コレクション要素のクラスがIdフィールドを持っている場合、そのId値がコレクション要素を構築する際に用いられる。そうでない場合は要素のノード名は定数が用いられる。</p>
+
+<p>``` text Id属性の指定なしの場合
+   /test (コレクションフィールドを持つ親オブジェクト)</p>
+
+<pre><code> /mycollection (コレクション全体を格納するための中間ノード)
+      /collection-element (コレクションの第一要素を格納するためのノード)
+            /item-prop
+            ....
+      /collection-element (コレクションの第二要素を格納するためのノード)
+      ...
+</code></pre>
+
+<p>```</p>
+
+<p>``` text Id属性指定ありの場合
+   /test (コレクションフィールドを持つ親オブジェクト)</p>
+
+<pre><code> /mycollection (コレクション全体を格納するための中間ノード)
+      /aValue (最初の要素で指定されたIdの値を利用)
+            /item-prop
+            ....
+      /anotherValue (二番目の要素で指定されたIdの値を利用)
+      ...
+</code></pre>
+
+<p>```</p>
+
+<h3>EnumCollectionConverterImpl</h3>
+
+<p>Enum（列挙型）用のコンバータ。JCRのmulti valueプロパティを利用している。</p>
+
+<h3>MultiValueCollectionConverterImpl</h3>
+
+<p>JCR multi value プロパティに格納するコンバータ</p>
+
+<h3>NTCollectionConverterImpl</h3>
+
+<p>ノードタイプに基づいて、同じノードタイプをまとめてサブノードに格納する戦略。
+このコンバータを使うにあたっては、以下の３つの制約がある。</p>
+
+<ol>
+<li>要素に同じJCRノードタイプを持つコレクションを二つ親オブジェクトに持つことはできない。</li>
+<li>空のコレクションとNullコレクションの区別はできない。</li>
+<li>Mapはサポートされない。</li>
+</ol>
+
+
+<p>``` text Id属性が指定されていない場合
+   /test (コレクションフィールドを持つ親オブジェクト)</p>
+
+<pre><code>      /collection-element (コレクションの第一要素を格納するためのノード)
+            /item-prop
+            ....
+      /collection-element (コレクションの第二要素を格納するためのノード)
+      ...
+</code></pre>
+
+<p><code>``
+*</code>collection-element`ノードは全て同じJCRノードタイプであること</p>
+
+<p>``` text Id属性が指定されている場合
+   /test (コレクションフィールドを持つ親オブジェクト)</p>
+
+<pre><code>      /aValue (最初の要素で指定されたIdの値を利用)
+            /item-prop
+            ....
+      /anotherValue (二番目の要素で指定されたIdの値を利用)
+      ...
+</code></pre>
+
+<p>```
+* コレクション要素ノードは全て同じJCRノードタイプであること</p>
+
+<h3>ReferenceCollectionConverterImpl</h3>
+
+<p>Stringのコレクションを、１つのJCR multi valueプロパティに格納するコンバータ。</p>
+
+<h3>ResidualNodesCollectionConverterImpl</h3>
+
+<p>複数の子ノードを、<code>Node.getNodes(String pattern)</code>で取得してコレクションに変換するコンバータ。</p>
+
+<h3>ResidualPropertiesCollectionConverterImpl</h3>
+
+<p>複数のプロパティを、<code>Node.getProperties(String patter)</code>で取得し、コレクションに変換するコンバータ。</p>
 ]]></content>
   </entry>
   
