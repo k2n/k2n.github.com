@@ -124,7 +124,7 @@
 </span><span class='line'>    <span class="na">extend</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>                <span class="na">==</span><span class="o">|</span> <span class="na">親クラス名、オプション</span>
 </span><span class='line'>    <span class="na">abstract</span> <span class="o">(</span><span class="na">true</span><span class="o">|</span><span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>        <span class="na">==</span><span class="o">|</span> <span class="na">抽象クラスで階層マッピング内で使われている場合はtrue</span>
 </span><span class='line'>    <span class="na">interface</span> <span class="o">(</span><span class="na">true</span><span class="o">|</span><span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>       <span class="na">==</span><span class="o">|</span> <span class="na">インターフェースならtrue</span>
-</span><span class='line'>    <span class="na">discriminator</span> <span class="o">(</span><span class="na">true</span><span class="o">|</span><span class="na">false</span><span class="o">)</span> <span class="s2">&quot;true&quot;</span>    <span class="na">==</span><span class="o">|</span> <span class="na">マップされたノードがocm:discriminatorノードタイプを要求する場合はtrue。このタイプはclasssNameプロパティを含む。</span>
+</span><span class='line'>    <span class="na">discriminator</span> <span class="o">(</span><span class="na">true</span><span class="o">|</span><span class="na">false</span><span class="o">)</span> <span class="s2">&quot;true&quot;</span>    <span class="na">==</span><span class="o">|</span> <span class="na">マップされたノードがocm:discriminatorノードタイプを要求する場合はtrue。このタイプはocm_classnameプロパティを含む。</span>
 </span><span class='line'><span class="k">&gt;</span>
 </span></code></pre></td></tr></table></div></figure>
 
@@ -219,7 +219,7 @@
 <h2>discriminator</h2>
 
 <ul>
-<li>discriminatorフラグが真であれば、<code>ObjectConverterImpl.java#getObject</code>で、<code>className</code>に紐付けられたclass descriptorによってオブジェクトがインスタンス化される。偽であれば、ノードタイプに紐付けられたclass descriptorによってインスタンス化される。</li>
+<li>discriminatorフラグが真であれば、<code>ObjectConverterImpl.java#getObject</code>で、<code>className</code>に紐付けられたclass descriptorによってオブジェクトがインスタンス化される。偽であれば、ノードタイプに紐付けられたclass descriptorによってインスタンス化される。その際、クラス名は、<code>ocm:discriminator</code>ノードタイプのプロパティ<code>ocm_classname</code>に保持されている値が用いられる。</li>
 </ul>
 
 
@@ -383,6 +383,26 @@
 </span><span class='line'>
 </span><span class='line'>            <span class="n">Object</span> <span class="n">object</span> <span class="o">=</span> <span class="n">ReflectionUtils</span><span class="o">.</span><span class="na">newInstance</span><span class="o">(</span><span class="n">classDescriptor</span><span class="o">.</span><span class="na">getClassName</span><span class="o">());</span>
 </span><span class='line'><span class="o">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>参考：<code>ocm:discriminator</code>のノードタイプ定義</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>custom_nodetypes.xml </span><a href='https://github.com/k2n/jackrabbit-ocm/blob/master/src/test/test-config/nodetypes/custom_nodetypes.xml'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>   <span class="nt">&lt;nodeType</span> <span class="na">name=</span><span class="s">&quot;ocm:discriminator&quot;</span> <span class="na">isMixin=</span><span class="s">&quot;true&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;supertypes&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;supertype&gt;</span>nt:base<span class="nt">&lt;/supertype&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/supertypes&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;propertyDefinition</span> <span class="na">name=</span><span class="s">&quot;ocm_classname&quot;</span> <span class="na">requiredType=</span><span class="s">&quot;String&quot;</span> <span class="na">autoCreated=</span><span class="s">&quot;false&quot;</span> <span class="na">mandatory=</span><span class="s">&quot;true&quot;</span> <span class="na">onParentVersion=</span><span class="s">&quot;COPY&quot;</span> <span class="na">protected=</span><span class="s">&quot;false&quot;</span> <span class="na">multiple=</span><span class="s">&quot;false&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/nodeType&gt;</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -1021,7 +1041,7 @@ throws ObjectContentManagerException;
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/jackrabbit/'>jackrabbit</a>, <a class='category' href='/blog/categories/jcr/'>jcr</a>, <a class='category' href='/blog/categories/ocm/'>ocm</a>, <a class='category' href='/blog/categories/translation/'>translation</a>
+    <a class='category' href='/blog/categories/jackrabbit/'>jackrabbit</a>, <a class='category' href='/blog/categories/japanese/'>japanese</a>, <a class='category' href='/blog/categories/jcr/'>jcr</a>, <a class='category' href='/blog/categories/ocm/'>ocm</a>, <a class='category' href='/blog/categories/translation/'>translation</a>
   
 </span>
 
@@ -1044,6 +1064,8 @@ throws ObjectContentManagerException;
         <a class="basic-alignment left" href="/blog/2012/05/28/jackrabbit-ocm/" title="Previous Post: Jackrabbit OCM">&laquo; Jackrabbit OCM</a>
       
       
+        <a class="basic-alignment right" href="/blog/2012/05/29/nodetype-first-or-class-first/" title="Next Post: NodeType First or Class First">NodeType First or Class First &raquo;</a>
+      
     </p>
   </footer>
 </article>
@@ -1053,8 +1075,19 @@ throws ObjectContentManagerException;
 <aside class="sidebar">
   
     <section>
+  <h1>Categories</h1>
+  <ul>
+    <li>
+      <a class='category' href='/blog/categories/jackrabbit/'>jackrabbit</a>, <a class='category' href='/blog/categories/japanese/'>japanese</a>, <a class='category' href='/blog/categories/jcr/'>jcr</a>, <a class='category' href='/blog/categories/ocm/'>ocm</a>, <a class='category' href='/blog/categories/translation/'>translation</a>
+    </li>
+  </ul>
+
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/05/29/nodetype-first-or-class-first/">NodeType First or Class First</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2012/05/29/jackrabbit-ocm-class-descriptor/">Jackrabbit-ocm Class Descriptor</a>

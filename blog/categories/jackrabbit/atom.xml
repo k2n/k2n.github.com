@@ -4,7 +4,7 @@
   <title><![CDATA[Category: jackrabbit | Code Critique]]></title>
   <link href="http://k2n.github.com/blog/categories/jackrabbit/atom.xml" rel="self"/>
   <link href="http://k2n.github.com/"/>
-  <updated>2012-05-29T18:50:15-07:00</updated>
+  <updated>2012-05-30T15:08:09-07:00</updated>
   <id>http://k2n.github.com/</id>
   <author>
     <name><![CDATA[Kenji Nakamura]]></name>
@@ -12,6 +12,314 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[NodeType First or Class First]]></title>
+    <link href="http://k2n.github.com/blog/2012/05/29/nodetype-first-or-class-first/"/>
+    <updated>2012-05-29T19:14:00-07:00</updated>
+    <id>http://k2n.github.com/blog/2012/05/29/nodetype-first-or-class-first</id>
+    <content type="html"><![CDATA[<p>SOAPによるWebService向けのAPIを開発する際、WSDLを先に宣言してコードを生成するWSDL Firstのアプローチか、コードからWSDLを生成するCode Firstかを、戦略として選択する必要がある。jackrabbit-ocmにおいても同様に、開発戦略の選択が求められる。</p>
+
+<p>jackrabbit-ocmを用いてオブジェクトの永続化を行う際、二つのアプローチが考えられる。
+一つは、class descirptorのdiscriminatorを規定値の<code>true</code>のままで用い、ObjectContentManagerがオブジェクトをインスタンス化する場合は、クラスに紐づけられたclass descriptorの定義情報を参照する方法である。</p>
+
+<p>もうひとつは、まずノードタイプをXML、あるいは<a href="http://jackrabbit.apache.org/node-type-notation.html">CND</a>で定義し、そのノードタイプ定義に合わせて、ocmのclass descriptorをXMLまたはクラスのアノテーションとして定義する方法である。その際、class descriptorの<code>discriminator</code>フラグは<code>false</code>に設定し、ObjectContentMangerがオブジェクトをインスタンス化する際は、オブジェクトのclass descriptorではなく、ノードタイプのdescriptorが参照されることになる。</p>
+
+<h2>discriminator=true</h2>
+
+<p>一番目のアプローチの例として、<code>jackrabbit-ocm</code>プロジェクトのユニットテストで、<a href="https://github.com/k2n/jackrabbit-ocm/blob/master/src/test/java/org/apache/jackrabbit/ocm/manager/basic/AnnotationSimpleTest.java">AnnotateSimpleTest</a>を実行する。</p>
+
+<p>永続クラス<code>A</code>は下記の通り。
+``` java A.java https://github.com/k2n/jackrabbit-ocm/blob/master/src/test/java/org/apache/jackrabbit/ocm/manager/basic/AnnotationSimpleTest.java#L81
+...
+@Node(jcrMixinTypes="mix:lockable" )
+public class A
+{</p>
+
+<pre><code>@Field(path=true) private String path;
+@Field private String a1;
+@Field private String a2;
+@Bean(jcrType="nt:unstructured", jcrOnParentVersion="IGNORE") private B b;
+
+private B emptyB;
+
+@Collection(elementClassName=C.class, jcrType="nt:unstructured", jcrOnParentVersion="IGNORE") private java.util.Collection collection;
+@Collection(elementClassName=C.class) private java.util.Collection emptyCollection;
+</code></pre>
+
+<p>...</p>
+
+<p>```</p>
+
+<p><code>A</code>クラスを永続化するテストコードの一部は下記の通り。
+``` java AnnotationSimpleTest.java https://github.com/k2n/jackrabbit-ocm/blob/master/src/test/java/org/apache/jackrabbit/ocm/manager/basic/AnnotationSimpleTest.java#L81</p>
+
+<pre><code>A a = new A();
+a.setPath("/test");
+a.setA1("a1");
+a.setA2("a2");
+B b = new B();
+b.setB1("b1");
+b.setB2("b2");
+a.setB(b);
+
+C c1 = new C();
+c1.setId("first");
+c1.setName("First Element");
+C c2 = new C();
+c2.setId("second");
+c2.setName("Second Element");
+
+C c3 = new C();
+c3.setId("third");
+c3.setName("Third Element");
+
+
+Collection collection = new ArrayList();
+collection.add(c1);
+collection.add(c2);
+collection.add(c3);
+
+a.setCollection(collection);
+
+ocm.insert(a);
+ocm.save();
+</code></pre>
+
+<p>```</p>
+
+<p>テスト実行後のリポジトリは下記のようになる。<code>discriminator</code>は真なので、<code>ocm_classname</code>プロパティにフルパッケージのクラス名が設定されていることに注意。 <code>C.java</code>はdiscriminator=falseのため、<code>ocm_classname</code>プロパティを持たず、代わりに<code>ocm:C</code>ノードタイプを指定している。</p>
+
+<p>``` text
+/test
++-properties
+| +-jcr:mixinTypes: [mix:lockable]
+| +-a2: 'a2'
+| +-ocm_classname: 'org.apache.jackrabbit.ocm.testmodel.A'
+| +-jcr:primaryType: nt:unstructured
+| +-a1: 'new value'
++-children
+  +-/test/b
+  +-/test/collection</p>
+
+<p>% cd b
+/test/b
+% ls
+/test/b
++-properties
+| +-b1: 'new B1'
+| +-b2: 'new B2'
+| +-jcr:primaryType: nt:unstructured
+| +-ocm_classname: 'org.apache.jackrabbit.ocm.testmodel.B'
++-children</p>
+
+<p>% cd ..
+/test
+% cd collection
+/test/collection
+% ls
+/test/collection
++-properties
+| +-jcr:primaryType: nt:unstructured
++-children
+  +-/test/collection/first
+  +-/test/collection/second
+  +-/test/collection/third</p>
+
+<p>% cd first
+/test/collection/first
+% ls
+/test/collection/first
++-properties
+| +-jcr:predecessors: [8f92077a-1780-41fb-85fd-67e1f69c0dd3 -> /jcr:system/jcr:versionStorage/3f/65/cb/3f65cbf7-cdda-444b-8411-91549bfdf61a/jcr:rootVersion]
+| +-ocm:id: 'first'
+| +-jcr:uuid: '3f65cbf7-cdda-444b-8411-91549bfdf61a'
+| +-jcr:versionHistory: a49c277c-2a80-455f-b54c-e51feb744e38 -> /jcr:system/jcr:versionStorage/3f/65/cb/3f65cbf7-cdda-444b-8411-91549bfdf61a
+| +-ocm:name: 'First Element'
+| +-jcr:baseVersion: 8f92077a-1780-41fb-85fd-67e1f69c0dd3 -> /jcr:system/jcr:versionStorage/3f/65/cb/3f65cbf7-cdda-444b-8411-91549bfdf61a/jcr:rootVersion
+| +-jcr:primaryType: ocm:C
+| +-jcr:isCheckedOut: true
++-children
+```</p>
+
+<h2>discriminator=false</h2>
+
+<p>二番目のアプローチの例として、<code>jackrabbit-ocm</code>プロジェクトのユニットテストより、<code>Page</code>クラスを引用する。
+``` java Page.java https://github.com/k2n/jackrabbit-ocm/blob/master/src/test/java/org/apache/jackrabbit/ocm/testmodel/Page.java#L36
+@Node(jcrType="ocm:page", discriminator=false)
+public class Page
+{</p>
+
+<pre><code>@Field(path=true) String path;
+@Field(jcrName="ocm:title") String title;
+
+@Collection(collectionConverter=NTCollectionConverterImpl.class, jcrElementName="paragraph")
+List&lt;Paragraph&gt; paragraphs;
+</code></pre>
+
+<p>...
+}
+<code>
+このクラス定義にはすでにアノテーションでdescriptor情報が付加されているが、参考までに、XMLによる定義も載せる。
+</code> xml jcmmapping.xml https://github.com/k2n/jackrabbit-ocm/blob/master/src/test/test-config/jcrmapping.xml#L86</p>
+
+<pre><code>&lt;class-descriptor className="org.apache.jackrabbit.ocm.testmodel.Page" jcrType="ocm:page" discriminator="false" &gt;
+    &lt;field-descriptor fieldName="path" path="true" /&gt;
+    &lt;field-descriptor fieldName="title" jcrName="ocm:title" /&gt;
+    &lt;collection-descriptor fieldName="paragraphs" proxy="false"
+                           elementClassName="org.apache.jackrabbit.ocm.testmodel.Paragraph"
+                       jcrElementName="paragraph"
+                           collectionConverter="org.apache.jackrabbit.ocm.manager.collectionconverter.impl.NTCollectionConverterImpl" /&gt;
+&lt;/class-descriptor&gt;
+</code></pre>
+
+<p><code>
+このクラスがリポジトリに下記のコードで永続化する。
+</code> java Page object persistence snippet</p>
+
+<pre><code>        Page page = new Page();
+        page.setPath("/test");
+        page.setTitle("Page Title");
+
+        List&lt;Paragraph&gt; paragraphs = new ArrayList&lt;Paragraph&gt;();
+
+        paragraphs.add(new Paragraph("Para 1"));
+        paragraphs.add(new Paragraph("Para 2"));
+        paragraphs.add(new Paragraph("Para 3"));
+        page.setParagraphs(paragraphs);
+
+        ocm.insert(page);
+        ocm.save();
+</code></pre>
+
+<p>```</p>
+
+<p>永続化されたリポジトリ内の情報は以下の通り。Paragraphコレクションのコンバータとして、NTCollectionConverterImplが指定されているため、コレクションの要素であるParagraphクラスが、中間ノードの介在なしで、直接<code>test</code>の子要素として作成されていることに注目。<code>jcrElementName</code>が指定されているので、その値の<code>paragraph</code>（と添字）が要素名として使われている。</p>
+
+<p>``` text
+/test
++-properties
+| +-jcr:predecessors: [f57d2a5f-4b92-4930-be0e-3ca21efa1b7d -> /jcr:system/jcr:versionStorage/d6/f5/fa/d6f5fad1-4dfc-4adb-8433-112666e31134/jcr:rootVersion]
+| +-jcr:uuid: 'd6f5fad1-4dfc-4adb-8433-112666e31134'
+| +-jcr:versionHistory: 16f4955c-77df-48b5-8836-77fb1ff10f2c -> /jcr:system/jcr:versionStorage/d6/f5/fa/d6f5fad1-4dfc-4adb-8433-112666e31134
+| +-ocm:title: 'Page Title'
+| +-jcr:baseVersion: f57d2a5f-4b92-4930-be0e-3ca21efa1b7d -> /jcr:system/jcr:versionStorage/d6/f5/fa/d6f5fad1-4dfc-4adb-8433-112666e31134/jcr:rootVersion
+| +-jcr:isCheckedOut: true
+| +-jcr:primaryType: ocm:page
++-children
+  +-/test/paragraph
+  +-/test/paragraph[2]
+  +-/test/paragraph[3]</p>
+
+<p>/test/paragraph
++-properties
+| +-jcr:predecessors: [6175438a-b2d5-4458-b890-eb8e853b29c2 -> /jcr:system/jcr:versionStorage/7a/f7/0f/7af70f04-f6ad-4b04-9e0a-ad539c9c5499/jcr:rootVersion]
+| +-ocm:text: 'Para 1'
+| +-jcr:uuid: '7af70f04-f6ad-4b04-9e0a-ad539c9c5499'
+| +-jcr:versionHistory: d54ddd1a-7ee7-42d6-a395-003026f7a491 -> /jcr:system/jcr:versionStorage/7a/f7/0f/7af70f04-f6ad-4b04-9e0a-ad539c9c5499
+| +-jcr:baseVersion: 6175438a-b2d5-4458-b890-eb8e853b29c2 -> /jcr:system/jcr:versionStorage/7a/f7/0f/7af70f04-f6ad-4b04-9e0a-ad539c9c5499/jcr:rootVersion
+| +-jcr:isCheckedOut: true
+| +-jcr:primaryType: ocm:paragraph
++-children
+```
+また、ノードタイプ情報は下記のようになる。Class Descriptorの情報が一切含まれていなことに注目。</p>
+
+<p>``` text
+% ls
+/jcr:system/jcr:nodeTypes/ocm:page
++-properties
+| +-jcr:hasOrderableChildNodes: false
+| +-jcr:isMixin: false
+| +-jcr:nodeTypeName: ocm:page
+| +-jcr:mixinTypes: []
+| +-jcr:supertypes: [mix:versionable,nt:base]
+| +-jcr:primaryType: nt:nodeType
++-children
+  +-/jcr:system/jcr:nodeTypes/ocm:page/jcr:propertyDefinition
+  +-/jcr:system/jcr:nodeTypes/ocm:page/jcr:childNodeDefinition</p>
+
+<p>% ls                                                                                                                           [46/659]
+/jcr:system/jcr:nodeTypes/ocm:page/jcr:propertyDefinition
++-properties
+| +-jcr:requiredType: 'STRING'
+| +-jcr:autoCreated: false
+| +-jcr:multiple: false
+| +-jcr:mixinTypes: []
+| +-jcr:protected: false
+| +-jcr:name: ocm:title
+| +-jcr:mandatory: true
+| +-jcr:valueConstraints: []
+| +-jcr:primaryType: nt:propertyDefinition
+| +-jcr:onParentVersion: 'COPY'
++-children</p>
+
+<p>% ls
+/jcr:system/jcr:nodeTypes/ocm:page/jcr:childNodeDefinition
++-properties
+| +-jcr:requiredPrimaryTypes: [ocm:paragraph]
+| +-jcr:autoCreated: false
+| +-jcr:defaultPrimaryType: ocm:paragraph
+| +-jcr:mixinTypes: []
+| +-jcr:protected: false
+| +-jcr:sameNameSiblings: true
+| +-jcr:mandatory: false
+| +-jcr:primaryType: nt:childNodeDefinition
+| +-jcr:onParentVersion: 'COPY'
++-children
+```</p>
+
+<h1>使い分けの方針</h1>
+
+<p><a href="https://github.com/k2n/jackrabbit-ocm/blob/master/src/main/resources/org/apache/jackrabbit/ocm/config/jackrabbit-ocm-1.5.dtd">Class Descriptor</a>と<a href="http://jackrabbit.apache.org/node-types.html">Node Type Definition</a>は重複した内容を多く含んでおり、両方の整合性を保つことは煩雑である。よって、jackrabbit-ocmを用いて開発する際は、まずどちらをマッピング情報の主たるソースとして利用するか決定する必要がある。</p>
+
+<p>もしjackrabbit-ocmをオブジェクト永続化フレームワークと捉え、オブジェクトによるモデリングを行うのであれば、<code>discriminator</code>を真、jcrTypeは<code>nt:unstructured</code>（どちらも規定値なので明示的な指定は不要）を選択し、Class Descriptorによるマッピングを行えばよい。</p>
+
+<p>一方、リポジトリに格納した情報を、OCMフレームワークを使わずに読み出したい場合は、ノードタイプを明示的に指定するアプローチが望ましいだろう。オブジェクトを保存して作成されるノードツリーはそれぞれ適切なノードタイプが付与され、OCMを意識する必要がない。OCMを使わずに、通常のJCR APIを用いてツリーを操作することも可能である。OCMフレームワークの外からノードやプロパティを変更した場合に懸念される、OCM側のキャッシュが不一致になる問題(stale cache)については、<a href="https://github.com/k2n/jackrabbit-ocm/blob/master/src/main/java/org/apache/jackrabbit/ocm/manager/impl/ObjectContentManagerImpl.java">ObjectContentManagerImpl</a>は<code>ObjectCache</code>のインスタンス（標準では<a href="https://github.com/k2n/jackrabbit-ocm/blob/master/src/main/java/org/apache/jackrabbit/ocm/manager/cache/impl/RequestObjectCacheImpl.java">RequestObjectCacheImpl.java</a>を用いているが、キャッシュは<code>getObject</code>メソッドのスコープ内のみで有効なため、問題を起こす可能性は非常に低い。また、同時更新の可能性を完全に排除する必要がある場合は、JCR2.0 17章で定義されているロックを使用するか、バージョン管理を行うことで問題を避ける事ができるはずである。</p>
+
+<p><div><script src='https://gist.github.com/2839177.js?file='></script>
+<noscript><pre><code>    public Object getObject(Class objectClass, String path) {
+        try {
+            if (!session.itemExists(path)) {
+                return null;
+            }
+        } catch (RepositoryException e) {
+            throw new org.apache.jackrabbit.ocm.exception.RepositoryException(&quot;Impossible to get the object at &quot; + path, e);
+        }
+
+        Object object = objectConverter.getObject(session, objectClass, path);
+        requestObjectCache.clear();
+        return object;
+
+    }</code></pre></noscript></div>
+</p>
+
+<p><div><script src='https://gist.github.com/2839183.js?file='></script>
+<noscript><pre><code>	public Object getObject(Session session, Class clazz, String path)
+	{
+		try {
+			if (!session.itemExists(path)) {
+				return null;
+			}
+
+			if (requestObjectCache.isCached(path))
+		    {
+		        return requestObjectCache.getObject(path);
+		    }
+
+			ClassDescriptor classDescriptor = getClassDescriptor(clazz);
+...snip...
+			
+            Object object = ReflectionUtils.newInstance(classDescriptor.getClassName());
+
+            if (! requestObjectCache.isCached(path))
+            {
+			  requestObjectCache.cache(path, object);
+            }
+...snip...
+	}</code></pre></noscript></div>
+</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Jackrabbit-ocm Class Descriptor]]></title>
@@ -34,7 +342,7 @@ jcrMixinTypes CDATA #IMPLIED         ==| JCR mix-inタイプ（カンマ区切�
 extend CDATA #IMPLIED                ==| 親クラス名、オプション
 abstract (true|false) "false"        ==| 抽象クラスで階層マッピング内で使われている場合はtrue
 interface (true|false) "false"       ==| インターフェースならtrue
-discriminator (true|false) "true"    ==| マップされたノードがocm:discriminatorノードタイプを要求する場合はtrue。このタイプはclasssNameプロパティを含む。
+discriminator (true|false) "true"    ==| マップされたノードがocm:discriminatorノードタイプを要求する場合はtrue。このタイプはocm_classnameプロパティを含む。
 </code></pre>
 
 <blockquote><p>```</p></blockquote>
@@ -101,7 +409,7 @@ List&lt;Paragraph&gt; paragraphs;
 <h2>discriminator</h2>
 
 <ul>
-<li>discriminatorフラグが真であれば、<code>ObjectConverterImpl.java#getObject</code>で、<code>className</code>に紐付けられたclass descriptorによってオブジェクトがインスタンス化される。偽であれば、ノードタイプに紐付けられたclass descriptorによってインスタンス化される。</li>
+<li>discriminatorフラグが真であれば、<code>ObjectConverterImpl.java#getObject</code>で、<code>className</code>に紐付けられたclass descriptorによってオブジェクトがインスタンス化される。偽であれば、ノードタイプに紐付けられたclass descriptorによってインスタンス化される。その際、クラス名は、<code>ocm:discriminator</code>ノードタイプのプロパティ<code>ocm_classname</code>に保持されている値が用いられる。</li>
 </ul>
 
 
@@ -192,6 +500,22 @@ public Object getObject(Session session, String path) {
 
 <p>...
 ```</p>
+
+<ul>
+<li>参考：<code>ocm:discriminator</code>のノードタイプ定義
+``` xml custom_nodetypes.xml https://github.com/k2n/jackrabbit-ocm/blob/master/src/test/test-config/nodetypes/custom_nodetypes.xml
+ <nodeType name="ocm:discriminator" isMixin="true">
+  <supertypes>
+
+<pre><code>&lt;supertype&gt;nt:base&lt;/supertype&gt;
+</code></pre>
+
+<p>  </supertypes>
+  <propertyDefinition name="ocm_classname" requiredType="String" autoCreated="false" mandatory="true" onParentVersion="COPY" protected="false" multiple="false" />  <br/>
+</nodeType>
+```</p></li>
+</ul>
+
 
 <h3>例：Paragraphクラス</h3>
 

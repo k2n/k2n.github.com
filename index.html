@@ -9,17 +9,7 @@
   <meta name="author" content="Kenji Nakamura">
 
   
-  <meta name="description" content="Class Descriptor要素と属性 jackrabbit-ocm-1.5.dtdに基づく。 class-descriptor XML1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-&lt;!ATTLIST class-descriptor className CDATA #REQUIRED &hellip;">
+  <meta name="description" content="SOAPによるWebService向けのAPIを開発する際、WSDLを先に宣言してコードを生成するWSDL Firstのアプローチか、コードからWSDLを生成するCode Firstかを、戦略として選択する必要がある。jackrabbit-ocmにおいても同様に、開発戦略の選択が求められる。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -80,6 +70,526 @@
       
   <header>
     
+      <h1 class="entry-title"><a href="/blog/2012/05/29/nodetype-first-or-class-first/">NodeType First or Class First</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-05-29T19:14:00-07:00" pubdate data-updated="true">05/29/2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>SOAPによるWebService向けのAPIを開発する際、WSDLを先に宣言してコードを生成するWSDL Firstのアプローチか、コードからWSDLを生成するCode Firstかを、戦略として選択する必要がある。jackrabbit-ocmにおいても同様に、開発戦略の選択が求められる。</p>
+
+<p>jackrabbit-ocmを用いてオブジェクトの永続化を行う際、二つのアプローチが考えられる。
+一つは、class descirptorのdiscriminatorを規定値の<code>true</code>のままで用い、ObjectContentManagerがオブジェクトをインスタンス化する場合は、クラスに紐づけられたclass descriptorの定義情報を参照する方法である。</p>
+
+<p>もうひとつは、まずノードタイプをXML、あるいは<a href="http://jackrabbit.apache.org/node-type-notation.html">CND</a>で定義し、そのノードタイプ定義に合わせて、ocmのclass descriptorをXMLまたはクラスのアノテーションとして定義する方法である。その際、class descriptorの<code>discriminator</code>フラグは<code>false</code>に設定し、ObjectContentMangerがオブジェクトをインスタンス化する際は、オブジェクトのclass descriptorではなく、ノードタイプのdescriptorが参照されることになる。</p>
+
+<h2>discriminator=true</h2>
+
+<p>一番目のアプローチの例として、<code>jackrabbit-ocm</code>プロジェクトのユニットテストで、<a href="https://github.com/k2n/jackrabbit-ocm/blob/master/src/test/java/org/apache/jackrabbit/ocm/manager/basic/AnnotationSimpleTest.java">AnnotateSimpleTest</a>を実行する。</p>
+
+<p>永続クラス<code>A</code>は下記の通り。</p>
+
+<figure class='code'><figcaption><span>A.java </span><a href='https://github.com/k2n/jackrabbit-ocm/blob/master/src/test/java/org/apache/jackrabbit/ocm/manager/basic/AnnotationSimpleTest.java#L81'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="nd">@Node</span><span class="o">(</span><span class="n">jcrMixinTypes</span><span class="o">=</span><span class="s">&quot;mix:lockable&quot;</span> <span class="o">)</span>
+</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">A</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="nd">@Field</span><span class="o">(</span><span class="n">path</span><span class="o">=</span><span class="kc">true</span><span class="o">)</span> <span class="kd">private</span> <span class="n">String</span> <span class="n">path</span><span class="o">;</span>
+</span><span class='line'>    <span class="nd">@Field</span> <span class="kd">private</span> <span class="n">String</span> <span class="n">a1</span><span class="o">;</span>
+</span><span class='line'>    <span class="nd">@Field</span> <span class="kd">private</span> <span class="n">String</span> <span class="n">a2</span><span class="o">;</span>
+</span><span class='line'>    <span class="nd">@Bean</span><span class="o">(</span><span class="n">jcrType</span><span class="o">=</span><span class="s">&quot;nt:unstructured&quot;</span><span class="o">,</span> <span class="n">jcrOnParentVersion</span><span class="o">=</span><span class="s">&quot;IGNORE&quot;</span><span class="o">)</span> <span class="kd">private</span> <span class="n">B</span> <span class="n">b</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">B</span> <span class="n">emptyB</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Collection</span><span class="o">(</span><span class="n">elementClassName</span><span class="o">=</span><span class="n">C</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">jcrType</span><span class="o">=</span><span class="s">&quot;nt:unstructured&quot;</span><span class="o">,</span> <span class="n">jcrOnParentVersion</span><span class="o">=</span><span class="s">&quot;IGNORE&quot;</span><span class="o">)</span> <span class="kd">private</span> <span class="n">java</span><span class="o">.</span><span class="na">util</span><span class="o">.</span><span class="na">Collection</span> <span class="n">collection</span><span class="o">;</span>
+</span><span class='line'>    <span class="nd">@Collection</span><span class="o">(</span><span class="n">elementClassName</span><span class="o">=</span><span class="n">C</span><span class="o">.</span><span class="na">class</span><span class="o">)</span> <span class="kd">private</span> <span class="n">java</span><span class="o">.</span><span class="na">util</span><span class="o">.</span><span class="na">Collection</span> <span class="n">emptyCollection</span><span class="o">;</span>
+</span><span class='line'><span class="o">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>A</code>クラスを永続化するテストコードの一部は下記の通り。</p>
+
+<figure class='code'><figcaption><span>AnnotationSimpleTest.java </span><a href='https://github.com/k2n/jackrabbit-ocm/blob/master/src/test/java/org/apache/jackrabbit/ocm/manager/basic/AnnotationSimpleTest.java#L81'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">A</span> <span class="n">a</span> <span class="o">=</span> <span class="k">new</span> <span class="n">A</span><span class="o">();</span>
+</span><span class='line'><span class="n">a</span><span class="o">.</span><span class="na">setPath</span><span class="o">(</span><span class="s">&quot;/test&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">a</span><span class="o">.</span><span class="na">setA1</span><span class="o">(</span><span class="s">&quot;a1&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">a</span><span class="o">.</span><span class="na">setA2</span><span class="o">(</span><span class="s">&quot;a2&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">B</span> <span class="n">b</span> <span class="o">=</span> <span class="k">new</span> <span class="n">B</span><span class="o">();</span>
+</span><span class='line'><span class="n">b</span><span class="o">.</span><span class="na">setB1</span><span class="o">(</span><span class="s">&quot;b1&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">b</span><span class="o">.</span><span class="na">setB2</span><span class="o">(</span><span class="s">&quot;b2&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">a</span><span class="o">.</span><span class="na">setB</span><span class="o">(</span><span class="n">b</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">C</span> <span class="n">c1</span> <span class="o">=</span> <span class="k">new</span> <span class="n">C</span><span class="o">();</span>
+</span><span class='line'><span class="n">c1</span><span class="o">.</span><span class="na">setId</span><span class="o">(</span><span class="s">&quot;first&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">c1</span><span class="o">.</span><span class="na">setName</span><span class="o">(</span><span class="s">&quot;First Element&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">C</span> <span class="n">c2</span> <span class="o">=</span> <span class="k">new</span> <span class="n">C</span><span class="o">();</span>
+</span><span class='line'><span class="n">c2</span><span class="o">.</span><span class="na">setId</span><span class="o">(</span><span class="s">&quot;second&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">c2</span><span class="o">.</span><span class="na">setName</span><span class="o">(</span><span class="s">&quot;Second Element&quot;</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">C</span> <span class="n">c3</span> <span class="o">=</span> <span class="k">new</span> <span class="n">C</span><span class="o">();</span>
+</span><span class='line'><span class="n">c3</span><span class="o">.</span><span class="na">setId</span><span class="o">(</span><span class="s">&quot;third&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">c3</span><span class="o">.</span><span class="na">setName</span><span class="o">(</span><span class="s">&quot;Third Element&quot;</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="n">Collection</span> <span class="n">collection</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">();</span>
+</span><span class='line'><span class="n">collection</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">c1</span><span class="o">);</span>
+</span><span class='line'><span class="n">collection</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">c2</span><span class="o">);</span>
+</span><span class='line'><span class="n">collection</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">c3</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">a</span><span class="o">.</span><span class="na">setCollection</span><span class="o">(</span><span class="n">collection</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">insert</span><span class="o">(</span><span class="n">a</span><span class="o">);</span>
+</span><span class='line'><span class="n">ocm</span><span class="o">.</span><span class="na">save</span><span class="o">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>テスト実行後のリポジトリは下記のようになる。<code>discriminator</code>は真なので、<code>ocm_classname</code>プロパティにフルパッケージのクラス名が設定されていることに注意。 <code>C.java</code>はdiscriminator=falseのため、<code>ocm_classname</code>プロパティを持たず、代わりに<code>ocm:C</code>ノードタイプを指定している。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>/test
+</span><span class='line'>+-properties
+</span><span class='line'>| +-jcr:mixinTypes: [mix:lockable]
+</span><span class='line'>| +-a2: &#39;a2&#39;
+</span><span class='line'>| +-ocm_classname: &#39;org.apache.jackrabbit.ocm.testmodel.A&#39;
+</span><span class='line'>| +-jcr:primaryType: nt:unstructured
+</span><span class='line'>| +-a1: &#39;new value&#39;
+</span><span class='line'>+-children
+</span><span class='line'>  +-/test/b
+</span><span class='line'>  +-/test/collection
+</span><span class='line'>
+</span><span class='line'>% cd b
+</span><span class='line'>/test/b
+</span><span class='line'>% ls
+</span><span class='line'>/test/b
+</span><span class='line'>+-properties
+</span><span class='line'>| +-b1: &#39;new B1&#39;
+</span><span class='line'>| +-b2: &#39;new B2&#39;
+</span><span class='line'>| +-jcr:primaryType: nt:unstructured
+</span><span class='line'>| +-ocm_classname: &#39;org.apache.jackrabbit.ocm.testmodel.B&#39;
+</span><span class='line'>+-children
+</span><span class='line'>
+</span><span class='line'>% cd ..
+</span><span class='line'>/test
+</span><span class='line'>% cd collection
+</span><span class='line'>/test/collection
+</span><span class='line'>% ls
+</span><span class='line'>/test/collection
+</span><span class='line'>+-properties
+</span><span class='line'>| +-jcr:primaryType: nt:unstructured
+</span><span class='line'>+-children
+</span><span class='line'>  +-/test/collection/first
+</span><span class='line'>  +-/test/collection/second
+</span><span class='line'>  +-/test/collection/third
+</span><span class='line'>
+</span><span class='line'>% cd first
+</span><span class='line'>/test/collection/first
+</span><span class='line'>% ls
+</span><span class='line'>/test/collection/first
+</span><span class='line'>+-properties
+</span><span class='line'>| +-jcr:predecessors: [8f92077a-1780-41fb-85fd-67e1f69c0dd3 -&gt; /jcr:system/jcr:versionStorage/3f/65/cb/3f65cbf7-cdda-444b-8411-91549bfdf61a/jcr:rootVersion]
+</span><span class='line'>| +-ocm:id: &#39;first&#39;
+</span><span class='line'>| +-jcr:uuid: &#39;3f65cbf7-cdda-444b-8411-91549bfdf61a&#39;
+</span><span class='line'>| +-jcr:versionHistory: a49c277c-2a80-455f-b54c-e51feb744e38 -&gt; /jcr:system/jcr:versionStorage/3f/65/cb/3f65cbf7-cdda-444b-8411-91549bfdf61a
+</span><span class='line'>| +-ocm:name: &#39;First Element&#39;
+</span><span class='line'>| +-jcr:baseVersion: 8f92077a-1780-41fb-85fd-67e1f69c0dd3 -&gt; /jcr:system/jcr:versionStorage/3f/65/cb/3f65cbf7-cdda-444b-8411-91549bfdf61a/jcr:rootVersion
+</span><span class='line'>| +-jcr:primaryType: ocm:C
+</span><span class='line'>| +-jcr:isCheckedOut: true
+</span><span class='line'>+-children
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>discriminator=false</h2>
+
+<p>二番目のアプローチの例として、<code>jackrabbit-ocm</code>プロジェクトのユニットテストより、<code>Page</code>クラスを引用する。</p>
+
+<figure class='code'><figcaption><span>Page.java </span><a href='https://github.com/k2n/jackrabbit-ocm/blob/master/src/test/java/org/apache/jackrabbit/ocm/testmodel/Page.java#L36'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Node</span><span class="o">(</span><span class="n">jcrType</span><span class="o">=</span><span class="s">&quot;ocm:page&quot;</span><span class="o">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="kc">false</span><span class="o">)</span>
+</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Page</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="nd">@Field</span><span class="o">(</span><span class="n">path</span><span class="o">=</span><span class="kc">true</span><span class="o">)</span> <span class="n">String</span> <span class="n">path</span><span class="o">;</span>
+</span><span class='line'>    <span class="nd">@Field</span><span class="o">(</span><span class="n">jcrName</span><span class="o">=</span><span class="s">&quot;ocm:title&quot;</span><span class="o">)</span> <span class="n">String</span> <span class="n">title</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Collection</span><span class="o">(</span><span class="n">collectionConverter</span><span class="o">=</span><span class="n">NTCollectionConverterImpl</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">jcrElementName</span><span class="o">=</span><span class="s">&quot;paragraph&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="n">List</span><span class="o">&lt;</span><span class="n">Paragraph</span><span class="o">&gt;</span> <span class="n">paragraphs</span><span class="o">;</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>このクラス定義にはすでにアノテーションでdescriptor情報が付加されているが、参考までに、XMLによる定義も載せる。</p>
+
+<figure class='code'><figcaption><span>jcmmapping.xml </span><a href='https://github.com/k2n/jackrabbit-ocm/blob/master/src/test/test-config/jcrmapping.xml#L86'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;class-descriptor</span> <span class="na">className=</span><span class="s">&quot;org.apache.jackrabbit.ocm.testmodel.Page&quot;</span> <span class="na">jcrType=</span><span class="s">&quot;ocm:page&quot;</span> <span class="na">discriminator=</span><span class="s">&quot;false&quot;</span> <span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;field-descriptor</span> <span class="na">fieldName=</span><span class="s">&quot;path&quot;</span> <span class="na">path=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;field-descriptor</span> <span class="na">fieldName=</span><span class="s">&quot;title&quot;</span> <span class="na">jcrName=</span><span class="s">&quot;ocm:title&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;collection-descriptor</span> <span class="na">fieldName=</span><span class="s">&quot;paragraphs&quot;</span> <span class="na">proxy=</span><span class="s">&quot;false&quot;</span>
+</span><span class='line'>                           <span class="na">elementClassName=</span><span class="s">&quot;org.apache.jackrabbit.ocm.testmodel.Paragraph&quot;</span>
+</span><span class='line'>                       <span class="na">jcrElementName=</span><span class="s">&quot;paragraph&quot;</span>
+</span><span class='line'>                           <span class="na">collectionConverter=</span><span class="s">&quot;org.apache.jackrabbit.ocm.manager.collectionconverter.impl.NTCollectionConverterImpl&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/class-descriptor&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>このクラスがリポジトリに下記のコードで永続化する。</p>
+
+<figure class='code'><figcaption><span>Page object persistence snippet</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>        <span class="n">Page</span> <span class="n">page</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Page</span><span class="o">();</span>
+</span><span class='line'>        <span class="n">page</span><span class="o">.</span><span class="na">setPath</span><span class="o">(</span><span class="s">&quot;/test&quot;</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">page</span><span class="o">.</span><span class="na">setTitle</span><span class="o">(</span><span class="s">&quot;Page Title&quot;</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">List</span><span class="o">&lt;</span><span class="n">Paragraph</span><span class="o">&gt;</span> <span class="n">paragraphs</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Paragraph</span><span class="o">&gt;();</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">paragraphs</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">Paragraph</span><span class="o">(</span><span class="s">&quot;Para 1&quot;</span><span class="o">));</span>
+</span><span class='line'>        <span class="n">paragraphs</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">Paragraph</span><span class="o">(</span><span class="s">&quot;Para 2&quot;</span><span class="o">));</span>
+</span><span class='line'>        <span class="n">paragraphs</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">Paragraph</span><span class="o">(</span><span class="s">&quot;Para 3&quot;</span><span class="o">));</span>
+</span><span class='line'>        <span class="n">page</span><span class="o">.</span><span class="na">setParagraphs</span><span class="o">(</span><span class="n">paragraphs</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">ocm</span><span class="o">.</span><span class="na">insert</span><span class="o">(</span><span class="n">page</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">ocm</span><span class="o">.</span><span class="na">save</span><span class="o">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>永続化されたリポジトリ内の情報は以下の通り。Paragraphコレクションのコンバータとして、NTCollectionConverterImplが指定されているため、コレクションの要素であるParagraphクラスが、中間ノードの介在なしで、直接<code>test</code>の子要素として作成されていることに注目。<code>jcrElementName</code>が指定されているので、その値の<code>paragraph</code>（と添字）が要素名として使われている。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>/test
+</span><span class='line'>+-properties
+</span><span class='line'>| +-jcr:predecessors: [f57d2a5f-4b92-4930-be0e-3ca21efa1b7d -&gt; /jcr:system/jcr:versionStorage/d6/f5/fa/d6f5fad1-4dfc-4adb-8433-112666e31134/jcr:rootVersion]
+</span><span class='line'>| +-jcr:uuid: &#39;d6f5fad1-4dfc-4adb-8433-112666e31134&#39;
+</span><span class='line'>| +-jcr:versionHistory: 16f4955c-77df-48b5-8836-77fb1ff10f2c -&gt; /jcr:system/jcr:versionStorage/d6/f5/fa/d6f5fad1-4dfc-4adb-8433-112666e31134
+</span><span class='line'>| +-ocm:title: &#39;Page Title&#39;
+</span><span class='line'>| +-jcr:baseVersion: f57d2a5f-4b92-4930-be0e-3ca21efa1b7d -&gt; /jcr:system/jcr:versionStorage/d6/f5/fa/d6f5fad1-4dfc-4adb-8433-112666e31134/jcr:rootVersion
+</span><span class='line'>| +-jcr:isCheckedOut: true
+</span><span class='line'>| +-jcr:primaryType: ocm:page
+</span><span class='line'>+-children
+</span><span class='line'>  +-/test/paragraph
+</span><span class='line'>  +-/test/paragraph[2]
+</span><span class='line'>  +-/test/paragraph[3]
+</span><span class='line'>
+</span><span class='line'>/test/paragraph
+</span><span class='line'>+-properties
+</span><span class='line'>| +-jcr:predecessors: [6175438a-b2d5-4458-b890-eb8e853b29c2 -&gt; /jcr:system/jcr:versionStorage/7a/f7/0f/7af70f04-f6ad-4b04-9e0a-ad539c9c5499/jcr:rootVersion]
+</span><span class='line'>| +-ocm:text: &#39;Para 1&#39;
+</span><span class='line'>| +-jcr:uuid: &#39;7af70f04-f6ad-4b04-9e0a-ad539c9c5499&#39;
+</span><span class='line'>| +-jcr:versionHistory: d54ddd1a-7ee7-42d6-a395-003026f7a491 -&gt; /jcr:system/jcr:versionStorage/7a/f7/0f/7af70f04-f6ad-4b04-9e0a-ad539c9c5499
+</span><span class='line'>| +-jcr:baseVersion: 6175438a-b2d5-4458-b890-eb8e853b29c2 -&gt; /jcr:system/jcr:versionStorage/7a/f7/0f/7af70f04-f6ad-4b04-9e0a-ad539c9c5499/jcr:rootVersion
+</span><span class='line'>| +-jcr:isCheckedOut: true
+</span><span class='line'>| +-jcr:primaryType: ocm:paragraph
+</span><span class='line'>+-children
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>また、ノードタイプ情報は下記のようになる。Class Descriptorの情報が一切含まれていなことに注目。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>% ls
+</span><span class='line'>/jcr:system/jcr:nodeTypes/ocm:page
+</span><span class='line'>+-properties
+</span><span class='line'>| +-jcr:hasOrderableChildNodes: false
+</span><span class='line'>| +-jcr:isMixin: false
+</span><span class='line'>| +-jcr:nodeTypeName: ocm:page
+</span><span class='line'>| +-jcr:mixinTypes: []
+</span><span class='line'>| +-jcr:supertypes: [mix:versionable,nt:base]
+</span><span class='line'>| +-jcr:primaryType: nt:nodeType
+</span><span class='line'>+-children
+</span><span class='line'>  +-/jcr:system/jcr:nodeTypes/ocm:page/jcr:propertyDefinition
+</span><span class='line'>  +-/jcr:system/jcr:nodeTypes/ocm:page/jcr:childNodeDefinition
+</span><span class='line'>
+</span><span class='line'>% ls                                                                                                                           [46/659]
+</span><span class='line'>/jcr:system/jcr:nodeTypes/ocm:page/jcr:propertyDefinition
+</span><span class='line'>+-properties
+</span><span class='line'>| +-jcr:requiredType: &#39;STRING&#39;
+</span><span class='line'>| +-jcr:autoCreated: false
+</span><span class='line'>| +-jcr:multiple: false
+</span><span class='line'>| +-jcr:mixinTypes: []
+</span><span class='line'>| +-jcr:protected: false
+</span><span class='line'>| +-jcr:name: ocm:title
+</span><span class='line'>| +-jcr:mandatory: true
+</span><span class='line'>| +-jcr:valueConstraints: []
+</span><span class='line'>| +-jcr:primaryType: nt:propertyDefinition
+</span><span class='line'>| +-jcr:onParentVersion: &#39;COPY&#39;
+</span><span class='line'>+-children
+</span><span class='line'>
+</span><span class='line'>% ls
+</span><span class='line'>/jcr:system/jcr:nodeTypes/ocm:page/jcr:childNodeDefinition
+</span><span class='line'>+-properties
+</span><span class='line'>| +-jcr:requiredPrimaryTypes: [ocm:paragraph]
+</span><span class='line'>| +-jcr:autoCreated: false
+</span><span class='line'>| +-jcr:defaultPrimaryType: ocm:paragraph
+</span><span class='line'>| +-jcr:mixinTypes: []
+</span><span class='line'>| +-jcr:protected: false
+</span><span class='line'>| +-jcr:sameNameSiblings: true
+</span><span class='line'>| +-jcr:mandatory: false
+</span><span class='line'>| +-jcr:primaryType: nt:childNodeDefinition
+</span><span class='line'>| +-jcr:onParentVersion: &#39;COPY&#39;
+</span><span class='line'>+-children
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>使い分けの方針</h1>
+
+<p><a href="https://github.com/k2n/jackrabbit-ocm/blob/master/src/main/resources/org/apache/jackrabbit/ocm/config/jackrabbit-ocm-1.5.dtd">Class Descriptor</a>と<a href="http://jackrabbit.apache.org/node-types.html">Node Type Definition</a>は重複した内容を多く含んでおり、両方の整合性を保つことは煩雑である。よって、jackrabbit-ocmを用いて開発する際は、まずどちらをマッピング情報の主たるソースとして利用するか決定する必要がある。</p>
+
+<p>もしjackrabbit-ocmをオブジェクト永続化フレームワークと捉え、オブジェクトによるモデリングを行うのであれば、<code>discriminator</code>を真、jcrTypeは<code>nt:unstructured</code>（どちらも規定値なので明示的な指定は不要）を選択し、Class Descriptorによるマッピングを行えばよい。</p>
+
+<p>一方、リポジトリに格納した情報を、OCMフレームワークを使わずに読み出したい場合は、ノードタイプを明示的に指定するアプローチが望ましいだろう。オブジェクトを保存して作成されるノードツリーはそれぞれ適切なノードタイプが付与され、OCMを意識する必要がない。OCMを使わずに、通常のJCR APIを用いてツリーを操作することも可能である。OCMフレームワークの外からノードやプロパティを変更した場合に懸念される、OCM側のキャッシュが不一致になる問題(stale cache)については、<a href="https://github.com/k2n/jackrabbit-ocm/blob/master/src/main/java/org/apache/jackrabbit/ocm/manager/impl/ObjectContentManagerImpl.java">ObjectContentManagerImpl</a>は<code>ObjectCache</code>のインスタンス（標準では<a href="https://github.com/k2n/jackrabbit-ocm/blob/master/src/main/java/org/apache/jackrabbit/ocm/manager/cache/impl/RequestObjectCacheImpl.java">RequestObjectCacheImpl.java</a>を用いているが、キャッシュは<code>getObject</code>メソッドのスコープ内のみで有効なため、問題を起こす可能性は非常に低い。また、同時更新の可能性を完全に排除する必要がある場合は、JCR2.0 17章で定義されているロックを使用するか、バージョン管理を行うことで問題を避ける事ができるはずである。</p>
+
+<div><script src='https://gist.github.com/2839177.js?file='></script>
+<noscript><pre><code>    public Object getObject(Class objectClass, String path) {
+        try {
+            if (!session.itemExists(path)) {
+                return null;
+            }
+        } catch (RepositoryException e) {
+            throw new org.apache.jackrabbit.ocm.exception.RepositoryException(&quot;Impossible to get the object at &quot; + path, e);
+        }
+
+        Object object = objectConverter.getObject(session, objectClass, path);
+        requestObjectCache.clear();
+        return object;
+
+    }</code></pre></noscript></div>
+
+
+
+
+<div><script src='https://gist.github.com/2839183.js?file='></script>
+<noscript><pre><code>   public Object getObject(Session session, Class clazz, String path)
+    {
+        try {
+            if (!session.itemExists(path)) {
+                return null;
+            }
+
+            if (requestObjectCache.isCached(path))
+            {
+                return requestObjectCache.getObject(path);
+            }
+
+            ClassDescriptor classDescriptor = getClassDescriptor(clazz);
+...snip...
+            
+            Object object = ReflectionUtils.newInstance(classDescriptor.getClassName());
+
+            if (! requestObjectCache.isCached(path))
+            {
+              requestObjectCache.cache(path, object);
+            }
+...snip...
+    }</code></pre></noscript></div>
+
+
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
       <h1 class="entry-title"><a href="/blog/2012/05/29/jackrabbit-ocm-class-descriptor/">Jackrabbit-ocm Class Descriptor</a></h1>
     
     
@@ -127,7 +637,7 @@
 </span><span class='line'>    <span class="na">extend</span> <span class="kc">CDATA</span> <span class="kc">#IMPLIED</span>                <span class="na">==</span><span class="o">|</span> <span class="na">親クラス名、オプション</span>
 </span><span class='line'>    <span class="na">abstract</span> <span class="o">(</span><span class="na">true</span><span class="o">|</span><span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>        <span class="na">==</span><span class="o">|</span> <span class="na">抽象クラスで階層マッピング内で使われている場合はtrue</span>
 </span><span class='line'>    <span class="na">interface</span> <span class="o">(</span><span class="na">true</span><span class="o">|</span><span class="na">false</span><span class="o">)</span> <span class="s2">&quot;false&quot;</span>       <span class="na">==</span><span class="o">|</span> <span class="na">インターフェースならtrue</span>
-</span><span class='line'>    <span class="na">discriminator</span> <span class="o">(</span><span class="na">true</span><span class="o">|</span><span class="na">false</span><span class="o">)</span> <span class="s2">&quot;true&quot;</span>    <span class="na">==</span><span class="o">|</span> <span class="na">マップされたノードがocm:discriminatorノードタイプを要求する場合はtrue。このタイプはclasssNameプロパティを含む。</span>
+</span><span class='line'>    <span class="na">discriminator</span> <span class="o">(</span><span class="na">true</span><span class="o">|</span><span class="na">false</span><span class="o">)</span> <span class="s2">&quot;true&quot;</span>    <span class="na">==</span><span class="o">|</span> <span class="na">マップされたノードがocm:discriminatorノードタイプを要求する場合はtrue。このタイプはocm_classnameプロパティを含む。</span>
 </span><span class='line'><span class="k">&gt;</span>
 </span></code></pre></td></tr></table></div></figure>
 
@@ -222,7 +732,7 @@
 <h2>discriminator</h2>
 
 <ul>
-<li>discriminatorフラグが真であれば、<code>ObjectConverterImpl.java#getObject</code>で、<code>className</code>に紐付けられたclass descriptorによってオブジェクトがインスタンス化される。偽であれば、ノードタイプに紐付けられたclass descriptorによってインスタンス化される。</li>
+<li>discriminatorフラグが真であれば、<code>ObjectConverterImpl.java#getObject</code>で、<code>className</code>に紐付けられたclass descriptorによってオブジェクトがインスタンス化される。偽であれば、ノードタイプに紐付けられたclass descriptorによってインスタンス化される。その際、クラス名は、<code>ocm:discriminator</code>ノードタイプのプロパティ<code>ocm_classname</code>に保持されている値が用いられる。</li>
 </ul>
 
 
@@ -386,6 +896,26 @@
 </span><span class='line'>
 </span><span class='line'>            <span class="n">Object</span> <span class="n">object</span> <span class="o">=</span> <span class="n">ReflectionUtils</span><span class="o">.</span><span class="na">newInstance</span><span class="o">(</span><span class="n">classDescriptor</span><span class="o">.</span><span class="na">getClassName</span><span class="o">());</span>
 </span><span class='line'><span class="o">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>参考：<code>ocm:discriminator</code>のノードタイプ定義</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>custom_nodetypes.xml </span><a href='https://github.com/k2n/jackrabbit-ocm/blob/master/src/test/test-config/nodetypes/custom_nodetypes.xml'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>   <span class="nt">&lt;nodeType</span> <span class="na">name=</span><span class="s">&quot;ocm:discriminator&quot;</span> <span class="na">isMixin=</span><span class="s">&quot;true&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;supertypes&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;supertype&gt;</span>nt:base<span class="nt">&lt;/supertype&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/supertypes&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;propertyDefinition</span> <span class="na">name=</span><span class="s">&quot;ocm_classname&quot;</span> <span class="na">requiredType=</span><span class="s">&quot;String&quot;</span> <span class="na">autoCreated=</span><span class="s">&quot;false&quot;</span> <span class="na">mandatory=</span><span class="s">&quot;true&quot;</span> <span class="na">onParentVersion=</span><span class="s">&quot;COPY&quot;</span> <span class="na">protected=</span><span class="s">&quot;false&quot;</span> <span class="na">multiple=</span><span class="s">&quot;false&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/nodeType&gt;</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -2200,8 +2730,19 @@ throws ObjectContentManagerException;
 <aside class="sidebar">
   
     <section>
+  <h1>Categories</h1>
+  <ul>
+    <li>
+      <a class='category' href='/blog/categories/jackrabbit/'>jackrabbit</a>, <a class='category' href='/blog/categories/japanese/'>japanese</a>, <a class='category' href='/blog/categories/jcr/'>jcr</a>, <a class='category' href='/blog/categories/ocm/'>ocm</a>, <a class='category' href='/blog/categories/translation/'>translation</a>
+    </li>
+  </ul>
+
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/05/29/nodetype-first-or-class-first/">NodeType First or Class First</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2012/05/29/jackrabbit-ocm-class-descriptor/">Jackrabbit-ocm Class Descriptor</a>

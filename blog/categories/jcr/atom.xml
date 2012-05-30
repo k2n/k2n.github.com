@@ -4,7 +4,7 @@
   <title><![CDATA[Category: jcr | Code Critique]]></title>
   <link href="http://k2n.github.com/blog/categories/jcr/atom.xml" rel="self"/>
   <link href="http://k2n.github.com/"/>
-  <updated>2012-05-29T18:50:15-07:00</updated>
+  <updated>2012-05-30T15:08:09-07:00</updated>
   <id>http://k2n.github.com/</id>
   <author>
     <name><![CDATA[Kenji Nakamura]]></name>
@@ -34,7 +34,7 @@ jcrMixinTypes CDATA #IMPLIED         ==| JCR mix-inタイプ（カンマ区切�
 extend CDATA #IMPLIED                ==| 親クラス名、オプション
 abstract (true|false) "false"        ==| 抽象クラスで階層マッピング内で使われている場合はtrue
 interface (true|false) "false"       ==| インターフェースならtrue
-discriminator (true|false) "true"    ==| マップされたノードがocm:discriminatorノードタイプを要求する場合はtrue。このタイプはclasssNameプロパティを含む。
+discriminator (true|false) "true"    ==| マップされたノードがocm:discriminatorノードタイプを要求する場合はtrue。このタイプはocm_classnameプロパティを含む。
 </code></pre>
 
 <blockquote><p>```</p></blockquote>
@@ -101,7 +101,7 @@ List&lt;Paragraph&gt; paragraphs;
 <h2>discriminator</h2>
 
 <ul>
-<li>discriminatorフラグが真であれば、<code>ObjectConverterImpl.java#getObject</code>で、<code>className</code>に紐付けられたclass descriptorによってオブジェクトがインスタンス化される。偽であれば、ノードタイプに紐付けられたclass descriptorによってインスタンス化される。</li>
+<li>discriminatorフラグが真であれば、<code>ObjectConverterImpl.java#getObject</code>で、<code>className</code>に紐付けられたclass descriptorによってオブジェクトがインスタンス化される。偽であれば、ノードタイプに紐付けられたclass descriptorによってインスタンス化される。その際、クラス名は、<code>ocm:discriminator</code>ノードタイプのプロパティ<code>ocm_classname</code>に保持されている値が用いられる。</li>
 </ul>
 
 
@@ -192,6 +192,22 @@ public Object getObject(Session session, String path) {
 
 <p>...
 ```</p>
+
+<ul>
+<li>参考：<code>ocm:discriminator</code>のノードタイプ定義
+``` xml custom_nodetypes.xml https://github.com/k2n/jackrabbit-ocm/blob/master/src/test/test-config/nodetypes/custom_nodetypes.xml
+ <nodeType name="ocm:discriminator" isMixin="true">
+  <supertypes>
+
+<pre><code>&lt;supertype&gt;nt:base&lt;/supertype&gt;
+</code></pre>
+
+<p>  </supertypes>
+  <propertyDefinition name="ocm_classname" requiredType="String" autoCreated="false" mandatory="true" onParentVersion="COPY" protected="false" multiple="false" />  <br/>
+</nodeType>
+```</p></li>
+</ul>
+
 
 <h3>例：Paragraphクラス</h3>
 
