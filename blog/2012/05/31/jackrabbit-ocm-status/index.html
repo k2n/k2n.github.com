@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Category: japanese - Code Critique</title>
+  <title>Jackrabbit OCM status - Code Critique</title>
   <meta name="author" content="Kenji Nakamura">
 
   
-  <meta name="description" content="Category: japanese">
+  <meta name="description" content="2012年5月末時点で最新のjackrabbit-ocmリリースは1.5.3である。Jackrabbit本体のバージョン(2.4.1)からは大きくかけ離れているが、これは、ocmはjakarta-commonsのサブプロジェクトとして、 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://k2n.github.comblog/categories/japanese">
+  <link rel="canonical" href="http://k2n.github.com/blog/2012/05/31/jackrabbit-ocm-status">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -75,77 +75,97 @@
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">Category: Japanese</h1>
+    
+      <h1 class="entry-title">Jackrabbit OCM Status</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-05-31T15:16:00-07:00" pubdate data-updated="true">05/31/2012</time>
+        
+      </p>
     
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><p>2012年5月末時点で最新のjackrabbit-ocmリリースは1.5.3である。Jackrabbit本体のバージョン(2.4.1)からは大きくかけ離れているが、これは、ocmはjakarta-commonsのサブプロジェクトとして、jackrabbit本体とは別のライフサイクルでリリースされているためである。OCMはJCRのみに依存しており、Jackrabbitの実装への依存性がほぼないことから、このような扱いとなっている。</p>
 
-  
-  <h2>2012</h2>
+<p>とはいえ、仕様が古くなっている点も散見される。例えばノードの取得時に、JCR2.0では非推奨になっているUUIDを用いており、このような点は修正される必要がある。</p>
 
-<article>
-  
-<h1><a href="/blog/2012/05/31/jackrabbit-ocm-status/">Jackrabbit OCM status</a></h1>
-<time datetime="2012-05-31T15:16:00-07:00" pubdate><span class='month'>May</span> <span class='day'>31</span> <span class='year'>2012</span></time>
+<p>2012年5月より、OCMの開発を再開する動きがでており、jackrabbit-ocmのtrunkコードベースはバージョン2.0-SNAPSHOTとなり、コードの更新が再開されている。</p>
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/jackrabbit/'>jackrabbit</a>, <a class='category' href='/blog/categories/japanese/'>japanese</a>, <a class='category' href='/blog/categories/ocm/'>ocm</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2012/05/29/nodetype-first-or-class-first/">NodeType First or Class First</a></h1>
-<time datetime="2012-05-29T19:14:00-07:00" pubdate><span class='month'>May</span> <span class='day'>29</span> <span class='year'>2012</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/jackrabbit/'>jackrabbit</a>, <a class='category' href='/blog/categories/japanese/'>japanese</a>, <a class='category' href='/blog/categories/ocm/'>ocm</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2012/05/29/jackrabbit-ocm-class-descriptor/">Jackrabbit-ocm Class Descriptor</a></h1>
-<time datetime="2012-05-29T11:27:00-07:00" pubdate><span class='month'>May</span> <span class='day'>29</span> <span class='year'>2012</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/jackrabbit/'>jackrabbit</a>, <a class='category' href='/blog/categories/japanese/'>japanese</a>, <a class='category' href='/blog/categories/jcr/'>jcr</a>, <a class='category' href='/blog/categories/ocm/'>ocm</a>, <a class='category' href='/blog/categories/translation/'>translation</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2012/05/28/jackrabbit-ocm/">Jackrabbit OCM</a></h1>
-<time datetime="2012-05-28T15:33:00-07:00" pubdate><span class='month'>May</span> <span class='day'>28</span> <span class='year'>2012</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/jackrabbit/'>jackrabbit</a>, <a class='category' href='/blog/categories/japanese/'>japanese</a>, <a class='category' href='/blog/categories/jcr/'>jcr</a>, <a class='category' href='/blog/categories/ocm/'>ocm</a>, <a class='category' href='/blog/categories/translation/'>translation</a></span>
-</footer>
-
-
-</article>
+<ul>
+<li>JIRA: https://issues.apache.org/jira/browse/OCM</li>
+<li>Svn:  http://svn.apache.org/viewvc/jackrabbit/commons/ocm/</li>
+<li>Forked source on Github: https://github.com/k2n/jackrabbit-ocm</li>
+</ul>
 
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">Kenji Nakamura</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-05-31T15:16:00-07:00" pubdate data-updated="true">05/31/2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/jackrabbit/'>jackrabbit</a>, <a class='category' href='/blog/categories/japanese/'>japanese</a>, <a class='category' href='/blog/categories/ocm/'>ocm</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://k2n.github.com/blog/2012/05/31/jackrabbit-ocm-status/" data-via="" data-counturl="http://k2n.github.com/blog/2012/05/31/jackrabbit-ocm-status/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/05/29/nodetype-first-or-class-first/" title="Previous Post: NodeType First or Class First">&laquo; NodeType First or Class First</a>
+      
+      
+    </p>
+  </footer>
 </article>
 
 </div>

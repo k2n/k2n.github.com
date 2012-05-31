@@ -4,7 +4,7 @@
   <title><![CDATA[Code Critique]]></title>
   <link href="http://k2n.github.com/atom.xml" rel="self"/>
   <link href="http://k2n.github.com/"/>
-  <updated>2012-05-30T22:15:58-07:00</updated>
+  <updated>2012-05-31T15:42:10-07:00</updated>
   <id>http://k2n.github.com/</id>
   <author>
     <name><![CDATA[Kenji Nakamura]]></name>
@@ -12,6 +12,26 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Jackrabbit OCM status]]></title>
+    <link href="http://k2n.github.com/blog/2012/05/31/jackrabbit-ocm-status/"/>
+    <updated>2012-05-31T15:16:00-07:00</updated>
+    <id>http://k2n.github.com/blog/2012/05/31/jackrabbit-ocm-status</id>
+    <content type="html"><![CDATA[<p>2012年5月末時点で最新のjackrabbit-ocmリリースは1.5.3である。Jackrabbit本体のバージョン(2.4.1)からは大きくかけ離れているが、これは、ocmはjakarta-commonsのサブプロジェクトとして、jackrabbit本体とは別のライフサイクルでリリースされているためである。OCMはJCRのみに依存しており、Jackrabbitの実装への依存性がほぼないことから、このような扱いとなっている。</p>
+
+<p>とはいえ、仕様が古くなっている点も散見される。例えばノードの取得時に、JCR2.0では非推奨になっているUUIDを用いており、このような点は修正される必要がある。</p>
+
+<p>2012年5月より、OCMの開発を再開する動きがでており、jackrabbit-ocmのtrunkコードベースはバージョン2.0-SNAPSHOTとなり、コードの更新が再開されている。</p>
+
+<ul>
+<li>JIRA: https://issues.apache.org/jira/browse/OCM</li>
+<li>Svn:  http://svn.apache.org/viewvc/jackrabbit/commons/ocm/</li>
+<li>Forked source on Github: https://github.com/k2n/jackrabbit-ocm</li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[NodeType First or Class First]]></title>
