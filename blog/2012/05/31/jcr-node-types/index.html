@@ -1,0 +1,797 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>JCR Node Types - Code Critique</title>
+  <meta name="author" content="Kenji Nakamura">
+
+  
+  <meta name="description" content="JCRノードタイプ JCRコンテンツはノードとプロパティで構成される。ノードにはタイプ情報をもたせずに（=スキーマレス）格納することができる。その際のノードタイプはnt:unstructuredである。一方、格納する情報に規約を与えたい場合は、ノードタイプを定義し、 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://k2n.github.com/blog/2012/05/31/jcr-node-types">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Code Critique" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-32271000-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Code Critique</a></h1>
+  
+    <h2>Dicerning the value of brilliant code</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:k2n.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">JCR Node Types</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-05-31T16:51:00-07:00" pubdate data-updated="true">05/31/2012</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h1>JCRノードタイプ</h1>
+
+<p>JCRコンテンツはノードとプロパティで構成される。ノードにはタイプ情報をもたせずに（=スキーマレス）格納することができる。その際のノードタイプは<code>nt:unstructured</code>である。一方、格納する情報に規約を与えたい場合は、ノードタイプを定義し、格納する情報がスキーマに合致していることを保証することで、プログラムからのアクセスを容易にするとともに情報の整合性を向上させることができる。</p>
+
+<p>JCRは標準のノードタイプを定義している。本稿ではそれらについて解説する。</p>
+
+<h1>CND (Compact Namespace and Node Type Definition)</h1>
+
+<p>JCRのノードタイプ情報はXMLで表現することは可能であるが、boolean属性が多いため、冗長性が大きい。ノードタイプ情報をコンパクトに記述するため、CND記法が定義されている。</p>
+
+<figure class='code'><figcaption><span>CND文法 (EBNF記法)</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'> Cnd ::= {NamespaceMapping | NodeTypeDef}  // どちらかの要素の0個以上の繰り返し
+</span><span class='line'> NamespaceMapping ::= &#39;&lt;&#39; Prefix &#39;=&#39; Uri &#39;&gt;&#39;
+</span><span class='line'> Prefix ::= String
+</span><span class='line'> Uri ::= String
+</span><span class='line'> NodeTypeDef ::= NodeTypeName [Supertypes] // 角括弧はオプショナルであることを示す
+</span><span class='line'>                 [NodeTypeAttribute {NodeTypeAttribute}] // 中括弧は0個以上の繰り返し
+</span><span class='line'>                 {PropertyDef | ChildNodeDef} // どちらかの0個以上の繰り返し
+</span><span class='line'> NodeTypeName ::= &#39;[&#39; String &#39;]&#39;
+</span><span class='line'> Supertypes ::= &#39;&gt;&#39; (StringList | &#39;?&#39;)
+</span><span class='line'> NodeTypeAttribute ::= Orderable | Mixin | Abstract | Query | //OrderableはJCR2.0 23参照のこと
+</span><span class='line'>                       PrimaryItem
+</span><span class='line'> Orderable ::= (&#39;orderable&#39; | &#39;ord&#39; | &#39;o&#39;) [&#39;?&#39;]
+</span><span class='line'> Mixin ::= (&#39;mixin&#39; | &#39;mix&#39; | &#39;m&#39;) [&#39;?&#39;]
+</span><span class='line'> Abstract ::= (&#39;abstract&#39; | &#39;abs&#39; | &#39;a&#39;) [&#39;?&#39;]
+</span><span class='line'> Query ::= (&#39;noquery&#39; | &#39;nq&#39;) | (&#39;query&#39; | &#39;q&#39; )
+</span><span class='line'> PrimaryItem ::= (&#39;primaryitem&#39;| &#39;!&#39;)(String | &#39;?&#39;)
+</span><span class='line'> PropertyDef ::= PropertyName [PropertyType] [DefaultValues]
+</span><span class='line'>                 [PropertyAttribute {PropertyAttribute}]
+</span><span class='line'>                 [ValueConstraints]
+</span><span class='line'> PropertyName ::= &#39;-&#39; String
+</span><span class='line'> PropertyType ::= &#39;(&#39; (&#39;STRING&#39; | &#39;BINARY&#39; | &#39;LONG&#39; | &#39;DOUBLE&#39; |
+</span><span class='line'>                       &#39;BOOLEAN&#39; | &#39;DATE&#39; | &#39;NAME&#39; | &#39;PATH&#39; |
+</span><span class='line'>                       &#39;REFERENCE&#39; | &#39;WEAKREFERENCE&#39; |
+</span><span class='line'>                       &#39;DECIMAL&#39; | &#39;URI&#39; | &#39;UNDEFINED&#39; | &#39;*&#39; |
+</span><span class='line'>                       &#39;?&#39;) &#39;)&#39;
+</span><span class='line'> DefaultValues ::= &#39;=&#39; (StringList | &#39;?&#39;)
+</span><span class='line'> ValueConstraints ::= &#39;&lt;&#39; (StringList | &#39;?&#39;)
+</span><span class='line'> ChildNodeDef ::= NodeName [RequiredTypes] [DefaultType]
+</span><span class='line'>                  [NodeAttribute {NodeAttribute}]
+</span><span class='line'> NodeName ::= &#39;+&#39; String
+</span><span class='line'> RequiredTypes ::= &#39;(&#39; (StringList | &#39;?&#39;) &#39;)&#39;
+</span><span class='line'> DefaultType ::= &#39;=&#39; (String | &#39;?&#39;)
+</span><span class='line'> PropertyAttribute ::= Autocreated | Mandatory | Protected |
+</span><span class='line'>                       Opv | Multiple | QueryOps | NoFullText |
+</span><span class='line'>                       NoQueryOrder
+</span><span class='line'> NodeAttribute ::= Autocreated | Mandatory | Protected |
+</span><span class='line'>                   Opv | Sns                              // Opv == On-Parent-Version 3.7.2.5 参照
+</span><span class='line'>                                                          // Sns == Same-name-Siblings 22 参照
+</span><span class='line'> Autocreated ::= (&#39;autocreated&#39; | &#39;aut&#39; | &#39;a&#39; )[&#39;?&#39;]
+</span><span class='line'> Mandatory ::= (&#39;mandatory&#39; | &#39;man&#39; | &#39;m&#39;) [&#39;?&#39;]
+</span><span class='line'> Protected ::= (&#39;protected&#39; | &#39;pro&#39; | &#39;p&#39;) [&#39;?&#39;]
+</span><span class='line'> Opv ::= &#39;COPY&#39; | &#39;VERSION&#39; | &#39;INITIALIZE&#39; | &#39;COMPUTE&#39; |
+</span><span class='line'>         &#39;IGNORE&#39; | &#39;ABORT&#39; | (&#39;OPV&#39; &#39;?&#39;)
+</span><span class='line'> Multiple ::= (&#39;multiple&#39; | &#39;mul&#39; | &#39;*&#39;) [&#39;?&#39;]
+</span><span class='line'> QueryOps ::= (&#39;queryops&#39; | &#39;qop&#39;)
+</span><span class='line'>              ((&#39;&#39;&#39;Operator {&#39;,&#39;Operator}&#39;&#39;&#39;) | &#39;?&#39;)
+</span><span class='line'> Operator ::= &#39;=&#39; | &#39;&lt;&gt;&#39; | &#39;&lt;&#39; | &#39;&lt;=&#39; | &#39;&gt;&#39; | &#39;&gt;=&#39; | &#39;LIKE&#39;
+</span><span class='line'> NoFullText ::= (&#39;nofulltext&#39; | &#39;nof&#39;) [&#39;?&#39;]
+</span><span class='line'> NoQueryOrder ::= (&#39;noqueryorder&#39; | &#39;nqord&#39;) [&#39;?&#39;]
+</span><span class='line'> Sns ::= (&#39;sns&#39; | &#39;*&#39;) [&#39;?&#39;]
+</span><span class='line'> StringList ::= String {&#39;,&#39; String}
+</span><span class='line'> String ::= QuotedString | UnquotedString
+</span><span class='line'> QuotedString ::= SingleQuotedString | DoubleQuotedString
+</span><span class='line'> SingleQuotedString ::= &#39;&#39;&#39; UnquotedString &#39;&#39;&#39;
+</span><span class='line'> DoubleQuotedString ::= &#39;&quot;&#39; UnquotedString &#39;&quot;&#39;
+</span><span class='line'> UnquotedString ::= XmlChar {XmlChar}
+</span><span class='line'> XmlChar ::= see 3.2.2 Local Names
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>ベースタイプ</h1>
+
+<h2>nt:base</h2>
+
+<p><code>nt:base</code>は全てのプライマリノードタイプのベースとなる抽象プライマリノードタイプである。これだけがスーパータイプを持たないプライマリノードである。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[nt:base]
+</span><span class='line'>  abstract
+</span><span class='line'>  - jcr:primaryType (NAME) mandatory autocreated protected COMPUTE
+</span><span class='line'>  - jcr:mixinTypes (NAME) protected multiple COMPUTE
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>標準アプリケーションノードタイプ</h1>
+
+<h2>nt:hierarchyNode</h2>
+
+<p><code>nt:folder</code>と<code>nt:file</code>のスーパータイプとして使われる抽象ノードタイプである。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[nt:hierarchyNode] &gt; mix:created
+</span><span class='line'>  abstract
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>nt:file</h2>
+
+<p>ファイルを表すノードタイプ。<code>nt:hierarchyNode</code>を継承しており、<code>jcr:content</code>という子ノードをひとつ必須とする。<code>jcr:content</code>は実際のファイルの内容を保持するために用いられる。この子要素は必須ではあるが、自動生成はされない。そのノードタイプはアプリケーション次第であり、ユーザーによって指定されなければならないからである。一般的なアプローチとしては、<code>jcr:cotent</code>を<code>nt:resource</code>ノードタイプにするというものである。また、<code>jcr:content</code>は親ノード(=nt:file)のプライマリアイテムとして指定されている。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[nt:file] &gt; nt:hierarchyNode
+</span><span class='line'>  primaryitem jcr:content
+</span><span class='line'>  + jcr:content (nt:base) mandatory
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>nt:linkedFile</h2>
+
+<p><code>nt:file</code>に類似しているが、コンテンツノードは子ノードとして直接格納されず、REFERENCEプロパティとして指定されている。これによりコンテンツノードがワークスペースのどこかよそに格納しておくことを可能にし、それを複数の<code>nt:linkedFile</code>ノードで参照することを可能にする。このコンテンツノードは参照可能でなければならない。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[nt:linkedFile] &gt; nt:hierarchyNode
+</span><span class='line'>  primaryitem jcr:content
+</span><span class='line'>  - jcr:content (REFERENCE) mandatory
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>nt:folder</h2>
+
+<p>このノードタイプはフォルダ、あるいはディレクトリを表現するために用いることができる。このノードタイプは<code>nt:hierarchyNode</code>で定義されているアイテムを継承しており、他の<code>nt:hierarchyNode</code>を子ノードとしていくつでも取ることができる。具体的に言えば、<code>nt:folder</code>, <code>nt:file</code>, <code>nt:linkedFile</code>の子ノードを持つことができるということである。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[nt:folder] &gt; nt:hierarchyNode
+</span><span class='line'>  + * (nt:hierarchyNode) VERSION
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>nt:resource</h2>
+
+<p>このノードタイプはファイルの内容を表すのに用いられる。特に、<code>nt:file</code>のサブノードである<code>jcr:content</code>はしばしば<code>nt:resource</code>となる。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[nt:resource] &gt; mix:mimeType, mix:lastModified, mix:referenceable
+</span><span class='line'>  primaryitem jcr:data
+</span><span class='line'>  - jcr:data (BINARY) mandatory
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>mix:title</h2>
+
+<p>このmixinノードタイプは標準化されたタイトルと説明プロパティをノードに付加するために用いられる。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[mix:title]
+</span><span class='line'>  mixin
+</span><span class='line'>  - jcr:title (STRING)
+</span><span class='line'>  - jcr:description (STRING)
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>mix:created</h2>
+
+<p>このmixinノードタイプは標準化された作成情報をノードに付与するために用いられる。これらのプロパティはprotectedされているため、値はリポジトリによって制御されており、このmixinタイプが付与されたノードが最初に永続化される時に情報が適宜設定される。既に存在するノードに対してこのmixinが付与された場合の振舞いは実装に依る。Jackrabbitの場合は現在の日付とユーザーでプロパティを初期化する。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[mix:created]
+</span><span class='line'>  mixin
+</span><span class='line'>  - jcr:created (DATE) autocreated protected
+</span><span class='line'>  - jcr:createdBy (STRING) autocreated protected
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>mix:lastModified</h2>
+
+<p>このmixinノードタイプはノードに標準化された更新情報を付与するために用いることができる。
+JCR2.0スペックでは、「このプロパティは保護されているため値はリポジトリによって制御されており、このmixinを持つノードのサブグラフにおいて重大な改変があった場合には適切に値を設定しなければならない。重大な改変に相当するものはノードのサブグラフの意味によるため、実装依存とする。」とあるが、この部分についてはJackrabbitではまだ実装されていない。</p>
+
+<p>Jackrabbitはノードが新規作成された場合このプロパティを現在の日付とユーザーで初期化する。</p>
+
+<p>JSR-283で提案されていた、このプロパティに対する保護属性はこのバージョンでは除外されていることに注意。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[mix:lastModified]
+</span><span class='line'>  mixin
+</span><span class='line'>  - jcr:lastModified (DATE) autocreated
+</span><span class='line'>  - jcr:lastModifiedBy (STRING) autocreated
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>mix:language</h2>
+
+<p>あるノードのコンテンツが表現する自然言語を指定するための標準化されたプロパティを提供する。<code>jcr:language</code>プロパティの値は<a href="http://tools.ietf.org/html/rfc5646">RFC5646</a>で指定された言語コードでなければいけない。例：<code>en</code>（英語）、&#8221;en-US&#8221;（米国英語）、&#8221;de&#8221;（ドイツ語）、&#8221;de-CH&#8221;（スイスドイツ語）</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[mix:language]
+</span><span class='line'>  mixin
+</span><span class='line'>  - jcr:language (STRING)
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>mix:mimeType</h2>
+
+<p>このmixinノードタイプはノードに対する標準化されたMIMEタイプとエンコーディングプロパティを提供するために用いられる。このタイプのノードが単値のBINARYプロパティのプライマリアイテムを持っている場合<code>jcr:mymeType</code>プロパティはそのメディアタイプがコンテンツに適用可能であり、かつそのメディアがテキストエンコーディングの適用が可能であるものの場合は、<code>jcr:encoding</code>プロパティが適用すべきキャラクタ・セット情報を示す。ノードが上記の条件を満たさない場合の解釈は実装に依存する。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[mix:mimeType]
+</span><span class='line'>  mixin
+</span><span class='line'>  - jcr:mimeType (STRING)
+</span><span class='line'>  - jcr:encoding (STRING)
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>nt:address</h2>
+
+<p>このノードタイプは、特定のワークスペース内だけでなく、全てのJCRリポジトリの全てのワークスペース内にあるJCRアイテムの場所を表すことができる。<code>jcr:protocol</code>, <code>jcr:host</code>, <code>jcr:port</code>についてのセマンティクスは定義されておらず、アプリケーション側が理解できるものとする。</p>
+
+<p>多くの場合、<code>jcr:path</code>か<code>jcr:id</code>のどちらかだけを用いて、この二つが違うノードを示すことを防ぐ。<code>jcr:path</code>と<code>jcr:id</code>以外のプロパティが欠けている場合、このアドレスは欠けているプロパティを現在いるレベルの値であるとして相対的に解釈する。例えば、もしリポジトリが指定されなければ現在のリポジトリ内での相対的なworkspaceとパスであると解釈される。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[nt:address]
+</span><span class='line'>  - jcr:protocol (STRING)
+</span><span class='line'>  - jcr:host (STRING)
+</span><span class='line'>  - jcr:port (STRING)
+</span><span class='line'>  - jcr:repository (STRING)
+</span><span class='line'>  - jcr:workspace (STRING)
+</span><span class='line'>  - jcr:path (PATH)
+</span><span class='line'>  - jcr:id (WEAKREFERENCE)
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>mix:etag</h2>
+
+<p><code>mix:etag</code> mixinタイプはBINARYプロパティ用に標準化された、HTTP/1.1のentity tagと同様のアイデンティティ・バリデータを提供する。
+<code>jcr:etag</code>はHTTP/1.1のentity tagsと同一の文法を持つ隠し文字列である。<code>mix:etag</code>を持つノードNを作成した際、リポジトリは<code>jcr:etag</code>プロパティに実装が決定した値をセットする。</p>
+
+<p><code>jcr:etag</code>の値はNに下記の変更が加えられた際には即座に変更されることになっている。</p>
+
+<ul>
+<li>あるBINARYプロパティがNに追加される。</li>
+<li>あるBINARYプロパティがNから削除される。</li>
+<li>既存のBINARYプロパティの値が変更される。</li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[mix:etag]
+</span><span class='line'>  mixin
+</span><span class='line'>  - jcr:etag (STRING) protected autocreated
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>非構造化コンテンツ</h1>
+
+<h2>nt:unstructured</h2>
+
+<p>このノードタイプは非構造化コンテンツを格納するために用いられる。任意の名前のプロパティをいくつでも保持することができる。複数のノードが同名を取ることも可能であるし、あるプロパティが複数の値をとることも、１つの値を取ることも自由である。このノードタイプはクライアント側の順序付け子ノードもサポートしている。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[nt:unstructured]
+</span><span class='line'>  orderable
+</span><span class='line'>  - * (UNDEFINED) multiple
+</span><span class='line'>  - * (UNDEFINED)
+</span><span class='line'>  + * (nt:base) = nt:unstructured sns VERSION
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>参照</h1>
+
+<h2>mix:referenceable</h2>
+
+<p>このノードタイプは、自動生成で、必須、保護されたSTRINGプロパティ<code>jcr:uuid</code>をノードに付与する。これはノードの識別子として用いられる。”UUID&#8221;という語はJCR1.0への後方互換性のために用いられており、必ずしもUUID文法を使うことを意味してはいないことに注意。参照可能ノードの識別子は参照可能な識別子でなければならない。参照可能な識別子は標準の識別子に要求される要件いアギに様々な制約を満たしていなければならない。（詳細は3.8.3 参照可能識別子を参照）参照プロパティは参照可能ノードの参照可能識別子を持つプロパティであり、結果としてそのノードへのポインターとして用いられる。<code>REFERENCE</code>と<code>WEAKREFERENCE</code>は前者が参照整合性を必要とするのに対し後者は不要であるという点が異なる。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[mix:referenceable]
+</span><span class='line'>  mixin
+</span><span class='line'>  - jcr:uuid (STRING) mandatory autocreated protected INITIALIZE
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>ロッキング</h1>
+
+<h2>mix:lockable</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[mix:lockable]
+</span><span class='line'>  mixin
+</span><span class='line'>  - jcr:lockOwner (STRING) protected IGNORE
+</span><span class='line'>  - jcr:lockIsDeep (BOOLEAN) protected IGNORE
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>共有可能ノード</h1>
+
+<h2>mix:shareable</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[mix:shareable] &gt; mix:referenceable
+</span><span class='line'>  mixin
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>バージョニング</h1>
+
+<h2>mix:simpleVersionable</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[mix:simpleVersionable]
+</span><span class='line'>  mixin
+</span><span class='line'>  - jcr:isCheckedOut (BOOLEAN) = &#39;true&#39; mandatory autocreated protected IGNORE
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>mix:versionable</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[mix:versionable] &gt; mix:simpleVersionable, mix:referenceable
+</span><span class='line'>  mixin
+</span><span class='line'>  - jcr:versionHistory (REFERENCE) mandatory protected IGNORE &lt; &#39;nt:versionHistory&#39;
+</span><span class='line'>  - jcr:baseVersion (REFERENCE) mandatory protected IGNORE &lt; &#39;nt:version&#39;
+</span><span class='line'>  - jcr:predecessors (REFERENCE) mandatory protected multiple IGNORE &lt; &#39;nt:version&#39;
+</span><span class='line'>  - jcr:mergeFailed (REFERENCE) protected multiple ABORT &lt; &#39;nt:version&#39;
+</span><span class='line'>    /** @since 2.0 */
+</span><span class='line'>  - jcr:activity (REFERENCE) protected &lt; &#39;nt:activity&#39;
+</span><span class='line'>    /** @since 2.0 */
+</span><span class='line'>  - jcr:configuration (REFERENCE) protected IGNORE &lt; &#39;nt:configuration&#39;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>nt:versionHistory</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[nt:versionHistory] &gt; mix:referenceable
+</span><span class='line'>  - jcr:versionableUuid (STRING) mandatory autocreated protected ABORT
+</span><span class='line'>    /** @since 2.0 */
+</span><span class='line'>  - jcr:copiedFrom (WEAKREFERENCE) protected ABORT &lt; &#39;nt:version&#39;
+</span><span class='line'>  + jcr:rootVersion (nt:version) = nt:version mandatory autocreated protected ABORT
+</span><span class='line'>  + jcr:versionLabels (nt:versionLabels) = nt:versionLabels mandatory autocreated protected ABORT
+</span><span class='line'>  + * (nt:version) = nt:version protected ABORT
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>nt:versionLables</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[nt:versionLabels]
+</span><span class='line'>  - * (REFERENCE) protected ABORT &lt; &#39;nt:version&#39;
+</span><span class='line'>[nt:version] &gt; mix:referenceable
+</span><span class='line'>  - jcr:created (DATE) mandatory autocreated protected ABORT
+</span><span class='line'>  - jcr:predecessors (REFERENCE) protected multiple ABORT &lt; &#39;nt:version&#39;
+</span><span class='line'>  - jcr:successors (REFERENCE) protected multiple ABORT &lt; &#39;nt:version&#39;
+</span><span class='line'>    /** @since 2.0 */
+</span><span class='line'>  - jcr:activity (REFERENCE) protected ABORT &lt; &#39;nt:activity&#39;
+</span><span class='line'>  + jcr:frozenNode (nt:frozenNode) protected ABORT
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>nt:frozenNode</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[nt:frozenNode] &gt; mix:referenceable
+</span><span class='line'>  orderable
+</span><span class='line'>  - jcr:frozenPrimaryType (NAME) mandatory autocreated protected ABORT
+</span><span class='line'>  - jcr:frozenMixinTypes (NAME) protected multiple ABORT
+</span><span class='line'>  - jcr:frozenUuid (STRING) mandatory autocreated protected ABORT
+</span><span class='line'>  - * (UNDEFINED) protected ABORT
+</span><span class='line'>  - * (UNDEFINED) protected multiple ABORT
+</span><span class='line'>  + * (nt:base) protected sns ABORT
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>nt:versionChild</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[nt:versionedChild]
+</span><span class='line'>  - jcr:childVersionHistory (REFERENCE) mandatory autocreated protected ABORT &lt; &#39;nt:versionHistory&#39;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>nt:activity</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[nt:activity] &gt; mix:referenceable
+</span><span class='line'>  - jcr:activityTitle (STRING) mandatory autocreated protected
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>nt:configuration</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>[nt:configuration] &gt; mix:versionable
+</span><span class='line'>  - jcr:root (REFERENCE) mandatory autocreated protected
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Kenji Nakamura</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-05-31T16:51:00-07:00" pubdate data-updated="true">05/31/2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/jackrabbit/'>jackrabbit</a>, <a class='category' href='/blog/categories/japanese/'>japanese</a>, <a class='category' href='/blog/categories/jcr/'>jcr</a>, <a class='category' href='/blog/categories/translation/'>translation</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://k2n.github.com/blog/2012/05/31/jcr-node-types/" data-via="" data-counturl="http://k2n.github.com/blog/2012/05/31/jcr-node-types/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/05/31/jackrabbit-ocm-status/" title="Previous Post: Jackrabbit OCM status">&laquo; Jackrabbit OCM status</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Categories</h1>
+  <ul>
+    <li>
+      <a class='category' href='/blog/categories/jackrabbit/'>jackrabbit</a>, <a class='category' href='/blog/categories/japanese/'>japanese</a>, <a class='category' href='/blog/categories/jcr/'>jcr</a>, <a class='category' href='/blog/categories/ocm/'>ocm</a>, <a class='category' href='/blog/categories/translation/'>translation</a>
+    </li>
+  </ul>
+
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/05/31/jcr-node-types/">JCR Node Types</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/05/31/jackrabbit-ocm-status/">Jackrabbit OCM status</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/05/29/nodetype-first-or-class-first/">NodeType First or Class First</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/05/29/jackrabbit-ocm-class-descriptor/">Jackrabbit-ocm Class Descriptor</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/05/28/jackrabbit-ocm/">Jackrabbit OCM</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/k2n">@k2n</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'k2n',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2012 - Kenji Nakamura -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

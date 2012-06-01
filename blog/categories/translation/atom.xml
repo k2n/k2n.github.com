@@ -4,7 +4,7 @@
   <title><![CDATA[Category: translation | Code Critique]]></title>
   <link href="http://k2n.github.com/blog/categories/translation/atom.xml" rel="self"/>
   <link href="http://k2n.github.com/"/>
-  <updated>2012-05-31T15:42:10-07:00</updated>
+  <updated>2012-05-31T20:42:59-07:00</updated>
   <id>http://k2n.github.com/</id>
   <author>
     <name><![CDATA[Kenji Nakamura]]></name>
@@ -12,6 +12,408 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[JCR Node Types]]></title>
+    <link href="http://k2n.github.com/blog/2012/05/31/jcr-node-types/"/>
+    <updated>2012-05-31T16:51:00-07:00</updated>
+    <id>http://k2n.github.com/blog/2012/05/31/jcr-node-types</id>
+    <content type="html"><![CDATA[<h1>JCRノードタイプ</h1>
+
+<p>JCRコンテンツはノードとプロパティで構成される。ノードにはタイプ情報をもたせずに（=スキーマレス）格納することができる。その際のノードタイプは<code>nt:unstructured</code>である。一方、格納する情報に規約を与えたい場合は、ノードタイプを定義し、格納する情報がスキーマに合致していることを保証することで、プログラムからのアクセスを容易にするとともに情報の整合性を向上させることができる。</p>
+
+<p>JCRは標準のノードタイプを定義している。本稿ではそれらについて解説する。</p>
+
+<h1>CND (Compact Namespace and Node Type Definition)</h1>
+
+<p>JCRのノードタイプ情報はXMLで表現することは可能であるが、boolean属性が多いため、冗長性が大きい。ノードタイプ情報をコンパクトに記述するため、CND記法が定義されている。</p>
+
+<p>``` text CND文法 (EBNF記法)
+ Cnd ::= {NamespaceMapping | NodeTypeDef}  // どちらかの要素の0個以上の繰り返し
+ NamespaceMapping ::= '&lt;' Prefix '=' Uri '>'
+ Prefix ::= String
+ Uri ::= String
+ NodeTypeDef ::= NodeTypeName [Supertypes] // 角括弧はオプショナルであることを示す</p>
+
+<pre><code>             [NodeTypeAttribute {NodeTypeAttribute}] // 中括弧は0個以上の繰り返し
+             {PropertyDef | ChildNodeDef} // どちらかの0個以上の繰り返し
+</code></pre>
+
+<p> NodeTypeName ::= '[' String ']'
+ Supertypes ::= '>' (StringList | '?')
+ NodeTypeAttribute ::= Orderable | Mixin | Abstract | Query | //OrderableはJCR2.0 23参照のこと</p>
+
+<pre><code>                   PrimaryItem
+</code></pre>
+
+<p> Orderable ::= ('orderable' | 'ord' | 'o') ['?']
+ Mixin ::= ('mixin' | 'mix' | 'm') ['?']
+ Abstract ::= ('abstract' | 'abs' | 'a') ['?']
+ Query ::= ('noquery' | 'nq') | ('query' | 'q' )
+ PrimaryItem ::= ('primaryitem'| '!')(String | '?')
+ PropertyDef ::= PropertyName [PropertyType] [DefaultValues]</p>
+
+<pre><code>             [PropertyAttribute {PropertyAttribute}]
+             [ValueConstraints]
+</code></pre>
+
+<p> PropertyName ::= '-' String
+ PropertyType ::= '(' ('STRING' | 'BINARY' | 'LONG' | 'DOUBLE' |</p>
+
+<pre><code>                   'BOOLEAN' | 'DATE' | 'NAME' | 'PATH' |
+                   'REFERENCE' | 'WEAKREFERENCE' |
+                   'DECIMAL' | 'URI' | 'UNDEFINED' | '*' |
+                   '?') ')'
+</code></pre>
+
+<p> DefaultValues ::= '=' (StringList | '?')
+ ValueConstraints ::= '&lt;' (StringList | '?')
+ ChildNodeDef ::= NodeName [RequiredTypes] [DefaultType]</p>
+
+<pre><code>              [NodeAttribute {NodeAttribute}]
+</code></pre>
+
+<p> NodeName ::= '+' String
+ RequiredTypes ::= '(' (StringList | '?') ')'
+ DefaultType ::= '=' (String | '?')
+ PropertyAttribute ::= Autocreated | Mandatory | Protected |</p>
+
+<pre><code>                   Opv | Multiple | QueryOps | NoFullText |
+                   NoQueryOrder
+</code></pre>
+
+<p> NodeAttribute ::= Autocreated | Mandatory | Protected |</p>
+
+<pre><code>               Opv | Sns                              // Opv == On-Parent-Version 3.7.2.5 参照
+                                                      // Sns == Same-name-Siblings 22 参照
+</code></pre>
+
+<p> Autocreated ::= ('autocreated' | 'aut' | 'a' )['?']
+ Mandatory ::= ('mandatory' | 'man' | 'm') ['?']
+ Protected ::= ('protected' | 'pro' | 'p') ['?']
+ Opv ::= 'COPY' | 'VERSION' | 'INITIALIZE' | 'COMPUTE' |</p>
+
+<pre><code>     'IGNORE' | 'ABORT' | ('OPV' '?')
+</code></pre>
+
+<p> Multiple ::= ('multiple' | 'mul' | '*') ['?']
+ QueryOps ::= ('queryops' | 'qop')</p>
+
+<pre><code>          (('''Operator {','Operator}''') | '?')
+</code></pre>
+
+<p> Operator ::= '=' | '&lt;>' | '&lt;' | '&lt;=' | '>' | '>=' | 'LIKE'
+ NoFullText ::= ('nofulltext' | 'nof') ['?']
+ NoQueryOrder ::= ('noqueryorder' | 'nqord') ['?']
+ Sns ::= ('sns' | '*') ['?']
+ StringList ::= String {',' String}
+ String ::= QuotedString | UnquotedString
+ QuotedString ::= SingleQuotedString | DoubleQuotedString
+ SingleQuotedString ::= ''' UnquotedString '''
+ DoubleQuotedString ::= '"' UnquotedString '"'
+ UnquotedString ::= XmlChar {XmlChar}
+ XmlChar ::= see 3.2.2 Local Names
+```</p>
+
+<h1>ベースタイプ</h1>
+
+<h2>nt:base</h2>
+
+<p><code>nt:base</code>は全てのプライマリノードタイプのベースとなる抽象プライマリノードタイプである。これだけがスーパータイプを持たないプライマリノードである。
+<code>text
+[nt:base]
+  abstract
+  - jcr:primaryType (NAME) mandatory autocreated protected COMPUTE
+  - jcr:mixinTypes (NAME) protected multiple COMPUTE
+</code></p>
+
+<h1>標準アプリケーションノードタイプ</h1>
+
+<h2>nt:hierarchyNode</h2>
+
+<p><code>nt:folder</code>と<code>nt:file</code>のスーパータイプとして使われる抽象ノードタイプである。
+<code>
+[nt:hierarchyNode] &gt; mix:created
+  abstract
+</code></p>
+
+<h2>nt:file</h2>
+
+<p>ファイルを表すノードタイプ。<code>nt:hierarchyNode</code>を継承しており、<code>jcr:content</code>という子ノードをひとつ必須とする。<code>jcr:content</code>は実際のファイルの内容を保持するために用いられる。この子要素は必須ではあるが、自動生成はされない。そのノードタイプはアプリケーション次第であり、ユーザーによって指定されなければならないからである。一般的なアプローチとしては、<code>jcr:cotent</code>を<code>nt:resource</code>ノードタイプにするというものである。また、<code>jcr:content</code>は親ノード(=nt:file)のプライマリアイテムとして指定されている。
+<code>
+[nt:file] &gt; nt:hierarchyNode
+  primaryitem jcr:content
+  + jcr:content (nt:base) mandatory
+</code></p>
+
+<h2>nt:linkedFile</h2>
+
+<p><code>nt:file</code>に類似しているが、コンテンツノードは子ノードとして直接格納されず、REFERENCEプロパティとして指定されている。これによりコンテンツノードがワークスペースのどこかよそに格納しておくことを可能にし、それを複数の<code>nt:linkedFile</code>ノードで参照することを可能にする。このコンテンツノードは参照可能でなければならない。
+<code>
+[nt:linkedFile] &gt; nt:hierarchyNode
+  primaryitem jcr:content
+  - jcr:content (REFERENCE) mandatory
+</code></p>
+
+<h2>nt:folder</h2>
+
+<p>このノードタイプはフォルダ、あるいはディレクトリを表現するために用いることができる。このノードタイプは<code>nt:hierarchyNode</code>で定義されているアイテムを継承しており、他の<code>nt:hierarchyNode</code>を子ノードとしていくつでも取ることができる。具体的に言えば、<code>nt:folder</code>, <code>nt:file</code>, <code>nt:linkedFile</code>の子ノードを持つことができるということである。
+<code>
+[nt:folder] &gt; nt:hierarchyNode
+  + * (nt:hierarchyNode) VERSION
+</code></p>
+
+<h2>nt:resource</h2>
+
+<p>このノードタイプはファイルの内容を表すのに用いられる。特に、<code>nt:file</code>のサブノードである<code>jcr:content</code>はしばしば<code>nt:resource</code>となる。
+<code>
+[nt:resource] &gt; mix:mimeType, mix:lastModified, mix:referenceable
+  primaryitem jcr:data
+  - jcr:data (BINARY) mandatory
+</code></p>
+
+<h2>mix:title</h2>
+
+<p>このmixinノードタイプは標準化されたタイトルと説明プロパティをノードに付加するために用いられる。
+<code>
+[mix:title]
+  mixin
+  - jcr:title (STRING)
+  - jcr:description (STRING)
+</code></p>
+
+<h2>mix:created</h2>
+
+<p>このmixinノードタイプは標準化された作成情報をノードに付与するために用いられる。これらのプロパティはprotectedされているため、値はリポジトリによって制御されており、このmixinタイプが付与されたノードが最初に永続化される時に情報が適宜設定される。既に存在するノードに対してこのmixinが付与された場合の振舞いは実装に依る。Jackrabbitの場合は現在の日付とユーザーでプロパティを初期化する。
+<code>
+[mix:created]
+  mixin
+  - jcr:created (DATE) autocreated protected
+  - jcr:createdBy (STRING) autocreated protected
+</code></p>
+
+<h2>mix:lastModified</h2>
+
+<p>このmixinノードタイプはノードに標準化された更新情報を付与するために用いることができる。
+JCR2.0スペックでは、「このプロパティは保護されているため値はリポジトリによって制御されており、このmixinを持つノードのサブグラフにおいて重大な改変があった場合には適切に値を設定しなければならない。重大な改変に相当するものはノードのサブグラフの意味によるため、実装依存とする。」とあるが、この部分についてはJackrabbitではまだ実装されていない。</p>
+
+<p>Jackrabbitはノードが新規作成された場合このプロパティを現在の日付とユーザーで初期化する。</p>
+
+<p>JSR-283で提案されていた、このプロパティに対する保護属性はこのバージョンでは除外されていることに注意。</p>
+
+<p><code>
+[mix:lastModified]
+  mixin
+  - jcr:lastModified (DATE) autocreated
+  - jcr:lastModifiedBy (STRING) autocreated
+</code></p>
+
+<h2>mix:language</h2>
+
+<p>あるノードのコンテンツが表現する自然言語を指定するための標準化されたプロパティを提供する。<code>jcr:language</code>プロパティの値は<a href="http://tools.ietf.org/html/rfc5646">RFC5646</a>で指定された言語コードでなければいけない。例：<code>en</code>（英語）、"en-US"（米国英語）、"de"（ドイツ語）、"de-CH"（スイスドイツ語）
+<code>
+[mix:language]
+  mixin
+  - jcr:language (STRING)
+</code></p>
+
+<h2>mix:mimeType</h2>
+
+<p>このmixinノードタイプはノードに対する標準化されたMIMEタイプとエンコーディングプロパティを提供するために用いられる。このタイプのノードが単値のBINARYプロパティのプライマリアイテムを持っている場合<code>jcr:mymeType</code>プロパティはそのメディアタイプがコンテンツに適用可能であり、かつそのメディアがテキストエンコーディングの適用が可能であるものの場合は、<code>jcr:encoding</code>プロパティが適用すべきキャラクタ・セット情報を示す。ノードが上記の条件を満たさない場合の解釈は実装に依存する。
+<code>
+[mix:mimeType]
+  mixin
+  - jcr:mimeType (STRING)
+  - jcr:encoding (STRING)
+</code></p>
+
+<h2>nt:address</h2>
+
+<p>このノードタイプは、特定のワークスペース内だけでなく、全てのJCRリポジトリの全てのワークスペース内にあるJCRアイテムの場所を表すことができる。<code>jcr:protocol</code>, <code>jcr:host</code>, <code>jcr:port</code>についてのセマンティクスは定義されておらず、アプリケーション側が理解できるものとする。</p>
+
+<p>多くの場合、<code>jcr:path</code>か<code>jcr:id</code>のどちらかだけを用いて、この二つが違うノードを示すことを防ぐ。<code>jcr:path</code>と<code>jcr:id</code>以外のプロパティが欠けている場合、このアドレスは欠けているプロパティを現在いるレベルの値であるとして相対的に解釈する。例えば、もしリポジトリが指定されなければ現在のリポジトリ内での相対的なworkspaceとパスであると解釈される。
+<code>
+[nt:address]
+  - jcr:protocol (STRING)
+  - jcr:host (STRING)
+  - jcr:port (STRING)
+  - jcr:repository (STRING)
+  - jcr:workspace (STRING)
+  - jcr:path (PATH)
+  - jcr:id (WEAKREFERENCE)
+</code></p>
+
+<h2>mix:etag</h2>
+
+<p><code>mix:etag</code> mixinタイプはBINARYプロパティ用に標準化された、HTTP/1.1のentity tagと同様のアイデンティティ・バリデータを提供する。
+<code>jcr:etag</code>はHTTP/1.1のentity tagsと同一の文法を持つ隠し文字列である。<code>mix:etag</code>を持つノードNを作成した際、リポジトリは<code>jcr:etag</code>プロパティに実装が決定した値をセットする。</p>
+
+<p><code>jcr:etag</code>の値はNに下記の変更が加えられた際には即座に変更されることになっている。</p>
+
+<ul>
+<li>あるBINARYプロパティがNに追加される。</li>
+<li>あるBINARYプロパティがNから削除される。</li>
+<li>既存のBINARYプロパティの値が変更される。</li>
+</ul>
+
+
+<p><code>
+[mix:etag]
+  mixin
+  - jcr:etag (STRING) protected autocreated
+</code></p>
+
+<h1>非構造化コンテンツ</h1>
+
+<h2>nt:unstructured</h2>
+
+<p>このノードタイプは非構造化コンテンツを格納するために用いられる。任意の名前のプロパティをいくつでも保持することができる。複数のノードが同名を取ることも可能であるし、あるプロパティが複数の値をとることも、１つの値を取ることも自由である。このノードタイプはクライアント側の順序付け子ノードもサポートしている。
+<code>
+[nt:unstructured]
+  orderable
+  - * (UNDEFINED) multiple
+  - * (UNDEFINED)
+  + * (nt:base) = nt:unstructured sns VERSION
+</code></p>
+
+<h1>参照</h1>
+
+<h2>mix:referenceable</h2>
+
+<p>このノードタイプは、自動生成で、必須、保護されたSTRINGプロパティ<code>jcr:uuid</code>をノードに付与する。これはノードの識別子として用いられる。”UUID"という語はJCR1.0への後方互換性のために用いられており、必ずしもUUID文法を使うことを意味してはいないことに注意。参照可能ノードの識別子は参照可能な識別子でなければならない。参照可能な識別子は標準の識別子に要求される要件いアギに様々な制約を満たしていなければならない。（詳細は3.8.3 参照可能識別子を参照）参照プロパティは参照可能ノードの参照可能識別子を持つプロパティであり、結果としてそのノードへのポインターとして用いられる。<code>REFERENCE</code>と<code>WEAKREFERENCE</code>は前者が参照整合性を必要とするのに対し後者は不要であるという点が異なる。
+<code>
+[mix:referenceable]
+  mixin
+  - jcr:uuid (STRING) mandatory autocreated protected INITIALIZE
+</code></p>
+
+<h1>ロッキング</h1>
+
+<h2>mix:lockable</h2>
+
+<p><code>
+[mix:lockable]
+  mixin
+  - jcr:lockOwner (STRING) protected IGNORE
+  - jcr:lockIsDeep (BOOLEAN) protected IGNORE
+</code></p>
+
+<h1>共有可能ノード</h1>
+
+<h2>mix:shareable</h2>
+
+<p><code>
+[mix:shareable] &gt; mix:referenceable
+  mixin
+</code></p>
+
+<h1>バージョニング</h1>
+
+<h2>mix:simpleVersionable</h2>
+
+<p><code>
+[mix:simpleVersionable]
+  mixin
+  - jcr:isCheckedOut (BOOLEAN) = 'true' mandatory autocreated protected IGNORE
+</code></p>
+
+<h2>mix:versionable</h2>
+
+<p>```
+[mix:versionable] > mix:simpleVersionable, mix:referenceable
+  mixin
+  - jcr:versionHistory (REFERENCE) mandatory protected IGNORE &lt; 'nt:versionHistory'
+  - jcr:baseVersion (REFERENCE) mandatory protected IGNORE &lt; 'nt:version'
+  - jcr:predecessors (REFERENCE) mandatory protected multiple IGNORE &lt; 'nt:version'
+  - jcr:mergeFailed (REFERENCE) protected multiple ABORT &lt; 'nt:version'</p>
+
+<pre><code>/** @since 2.0 */
+</code></pre>
+
+<ul>
+<li>jcr:activity (REFERENCE) protected &lt; 'nt:activity'
+/<em>* @since 2.0 </em>/</li>
+<li>jcr:configuration (REFERENCE) protected IGNORE &lt; 'nt:configuration'
+```</li>
+</ul>
+
+
+<h2>nt:versionHistory</h2>
+
+<p>```
+[nt:versionHistory] > mix:referenceable
+  - jcr:versionableUuid (STRING) mandatory autocreated protected ABORT</p>
+
+<pre><code>/** @since 2.0 */
+</code></pre>
+
+<ul>
+<li>jcr:copiedFrom (WEAKREFERENCE) protected ABORT &lt; 'nt:version'</li>
+<li>jcr:rootVersion (nt:version) = nt:version mandatory autocreated protected ABORT</li>
+<li>jcr:versionLabels (nt:versionLabels) = nt:versionLabels mandatory autocreated protected ABORT</li>
+<li><ul>
+<li>(nt:version) = nt:version protected ABORT
+```</li>
+</ul>
+</li>
+</ul>
+
+
+<h2>nt:versionLables</h2>
+
+<p>```
+[nt:versionLabels]
+  - * (REFERENCE) protected ABORT &lt; 'nt:version'
+[nt:version] > mix:referenceable
+  - jcr:created (DATE) mandatory autocreated protected ABORT
+  - jcr:predecessors (REFERENCE) protected multiple ABORT &lt; 'nt:version'
+  - jcr:successors (REFERENCE) protected multiple ABORT &lt; 'nt:version'</p>
+
+<pre><code>/** @since 2.0 */
+</code></pre>
+
+<ul>
+<li>jcr:activity (REFERENCE) protected ABORT &lt; 'nt:activity'</li>
+<li>jcr:frozenNode (nt:frozenNode) protected ABORT
+```</li>
+</ul>
+
+
+<h2>nt:frozenNode</h2>
+
+<p><code>
+[nt:frozenNode] &gt; mix:referenceable
+  orderable
+  - jcr:frozenPrimaryType (NAME) mandatory autocreated protected ABORT
+  - jcr:frozenMixinTypes (NAME) protected multiple ABORT
+  - jcr:frozenUuid (STRING) mandatory autocreated protected ABORT
+  - * (UNDEFINED) protected ABORT
+  - * (UNDEFINED) protected multiple ABORT
+  + * (nt:base) protected sns ABORT
+</code></p>
+
+<h2>nt:versionChild</h2>
+
+<p><code>
+[nt:versionedChild]
+  - jcr:childVersionHistory (REFERENCE) mandatory autocreated protected ABORT &lt; 'nt:versionHistory'
+</code></p>
+
+<h2>nt:activity</h2>
+
+<p><code>
+[nt:activity] &gt; mix:referenceable
+  - jcr:activityTitle (STRING) mandatory autocreated protected
+</code></p>
+
+<h2>nt:configuration</h2>
+
+<p><code>
+[nt:configuration] &gt; mix:versionable
+  - jcr:root (REFERENCE) mandatory autocreated protected
+</code></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Jackrabbit-ocm Class Descriptor]]></title>
