@@ -4,7 +4,7 @@
   <title><![CDATA[Code Critique]]></title>
   <link href="http://k2n.github.com/atom.xml" rel="self"/>
   <link href="http://k2n.github.com/"/>
-  <updated>2012-05-31T20:42:59-07:00</updated>
+  <updated>2012-06-05T13:50:46-07:00</updated>
   <id>http://k2n.github.com/</id>
   <author>
     <name><![CDATA[Kenji Nakamura]]></name>
@@ -12,6 +12,310 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[CRaSH]]></title>
+    <link href="http://k2n.github.com/blog/2012/06/05/crash/"/>
+    <updated>2012-06-05T12:26:00-07:00</updated>
+    <id>http://k2n.github.com/blog/2012/06/05/crash</id>
+    <content type="html"><![CDATA[<p>JCRを使う際、対話的にリポジトリを操作できるUIがあると便利である。筆者がいくつか試した末、気に入ったのは下記の二つである。</p>
+
+<ul>
+<li><a href="http://www.subshell.com/en/toromiro/toromiro104.html">Toromiro</a> &#8230; ドイツのSubShellで開発されている、Eclipse RCPベースのGUI。商用で600ユーロとそれなりの価格。30日間の試用が可能。</li>
+<li><a href="http://julienviet.com/crash/#home">CRaSH</a> &#8230; フランスのポータルフレームワーク、eXoの開発者が公開している、Java+Groovyで記述された対話的シェル。LGPLで配布されている。</li>
+</ul>
+
+
+<p>CRaSHは拡張性の高さが売りで、groovyスクリプトを書くだけでコマンドを拡張することができる。また、<a href="https://github.com/diva-america/crash/tree/master/jcr">JCRリポジトリ用のコマンド</a>も用意されている。
+最新版は1.1.0-cr1だが、いくつか問題点が散見されたので、コードをハックすることにした。</p>
+
+<h2>対話式コマンドラインの操作性改善</h2>
+
+<p>jlineはGNU ReadlineやBSD editlineのように、対話式コマンドラインを提供するライブラリである。jlineはほぼ100%Javaで実装されている。（Windows用のDLLが含まれているらしい）長らく開発が進んでいなかったのだが、scalaシェルで使われていることもあり、最近<a href="https://github.com/jline/jline2">jline2</a>として拡張する動きがある。</p>
+
+<p>最初CRaSH 1.0.0を使ったときは、古いバージョンのjlineが使われていたため、emacsやviのキーバインディングがエミュレートされておらず、使いづらさを感じた。そこでハックすることとした。</p>
+
+<h3>JavaEditline</h3>
+
+<p>まずは、editlineのjava JNIラッパーである、<a href="https://github.com/bmc/javaeditline">javaeditline</a>を使って、<a href="https://github.com/diva-america/crash/tree/javaeditline">jlineを置き換えるハック</a>を行った。editlineを使うためにはJNIライブラリを配布する必要があり、通常は手作業で<code>LD_LIBRARY_PATH</code>(linux) <code>/Library/Java/Extensions</code>(mac os x)にJNIライブラリをコピーしなければならない。これは不親切なので、CRaSHで、実行用jarファイルを作成するのに使われている<a href="https://github.com/diva-america/crash/blob/javaeditline/shell/core/src/main/assembly/standalone.xml">maven assembly plugin</a>の代わりに、<a href="http://one-jar.sourceforge.net/">One JAR</a>の<a href="https://github.com/k2n/onejar-maven-plugin">maven plugin</a>を使うことにした。</p>
+
+<h4>onejar-maven-pluginのハック</h4>
+
+<p>JavaeditlineのJNIライブラリは、linux 64bit, 32bit, mac os x版をそれぞれの環境でmakeし、同梱することにした。が、オリジナルのonejar-maven-pluginは全て<code>binlib/</code>にコピーするため、アーキテクチャが異なる同名のライブラリを共存させることができない。<a href="http://code.google.com/p/onejar-maven-plugin/issues/detail?id=25&amp;q=binlib">既知の問題</a>なのだが、パッチが適用されていないため、githubでフォークし対応することとした。
+具体的には、</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>binlib +-- linux32 -- libjavaeditlines.so
+</span><span class='line'>       |
+</span><span class='line'>       +-- linux64 -- libjavaeditlines.so
+</span><span class='line'>       |
+</span><span class='line'>       +-- macosx -- dynjavaeditlines.jnilib</span></code></pre></td></tr></table></div></figure>
+
+
+<p>の階層構造を保ったまま実行jarにアーカイブしたい。（OneJar側でこのような構造を期待されているので）
+そこで、下記のようなロジックを加えた。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// Add native libraries</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">binlibs</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">for</span> <span class="o">(</span><span class="n">FileSet</span> <span class="n">eachFileSet</span> <span class="o">:</span> <span class="n">binlibs</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">File</span> <span class="n">baseDir</span> <span class="o">=</span> <span class="k">new</span> <span class="n">File</span><span class="o">(</span><span class="n">eachFileSet</span><span class="o">.</span><span class="na">getDirectory</span><span class="o">());</span>
+</span><span class='line'>                <span class="n">List</span><span class="o">&lt;</span><span class="n">File</span><span class="o">&gt;</span> <span class="n">includedFiles</span> <span class="o">=</span> <span class="n">toFileList</span><span class="o">(</span><span class="n">eachFileSet</span><span class="o">);</span>
+</span><span class='line'>                <span class="n">debug</span><span class="o">(</span><span class="s">&quot;Adding [%s] native libraries...&quot;</span><span class="o">,</span> <span class="n">includedFiles</span><span class="o">.</span><span class="na">size</span><span class="o">());</span>
+</span><span class='line'>                <span class="k">for</span> <span class="o">(</span><span class="n">File</span> <span class="n">eachIncludedFile</span> <span class="o">:</span> <span class="n">includedFiles</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">File</span> <span class="n">parent</span> <span class="o">=</span> <span class="k">new</span> <span class="n">File</span><span class="o">(</span><span class="n">eachIncludedFile</span><span class="o">.</span><span class="na">getParent</span><span class="o">());</span>
+</span><span class='line'>                    <span class="n">String</span> <span class="n">relativePath</span> <span class="o">=</span> <span class="n">baseDir</span><span class="o">.</span><span class="na">toURI</span><span class="o">().</span><span class="na">relativize</span><span class="o">(</span><span class="n">parent</span>     <span class="c1">// &lt;== URI.relativizeを活用</span>
+</span><span class='line'>                            <span class="o">.</span><span class="na">toURI</span><span class="o">()).</span><span class="na">getPath</span><span class="o">();</span>
+</span><span class='line'>                    <span class="n">addToZip</span><span class="o">(</span><span class="n">eachIncludedFile</span><span class="o">,</span> <span class="s">&quot;binlib/&quot;</span> <span class="o">+</span> <span class="n">relativePath</span><span class="o">,</span> <span class="n">out</span><span class="o">);</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ポイントはURI.relativezeメソッドの活用である。JDK7ではFileクラスにも同様のメソッドが導入されたが、この方法で古いJDKでも動作させることができる。但し、この相対化は同じ階層の先祖と子孫の間でしか使えないことに注意。</p>
+
+<p>javaeditline対応版をビルドするには、<a href="https://github.com/diva-america/crash/tree/javaeditline">Fork版CRaSH</a>をクローンして、<code>javaeditilne</code>にブランチを切り替えて、トップレベルから<code>mvn package</code>を実行すればよい。</p>
+
+<p>以上で、無事editlineをjlineの代わりに使うことができた。もちろん、稼働するOSには<code>apt-get</code>などでeditlineを予めインストールしておく必要がある。（mac os xはプリインストールされているので作業は不要）
+これで、<code>$HOME/.inputrc</code>に下記のようなエントリーを入れることで、キーバインディングをVi風味に変更することが可能となる。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">set</span> <span class="n">editing</span><span class="o">-</span><span class="n">mode</span> <span class="n">vi</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>editlineが見つからない場合は、jlineをフォールバックとして使用する動作となっている。
+jline版に対するディグレッションとして、サブコマンド（例えば<code>system</code>のサブコマンドには<code>propset</code>, <code>propls</code>などがある）のタブキーによる補完が動かない。</p>
+
+<h3>jlineのアップグレード</h3>
+
+<p>土曜にjavaeditline版を作り、翌日サブコマンドの補完問題をfixしようかと考えていたところ、jlineでもviモードを実装中という情報を見つけ、単純にjlineをアップグレードすればいいのではないかという案を思いついた。そこでeditline版はまずここまでとし、jlineを見て見ることにした。</p>
+
+<p>crashの1.1.0-cr1ではシェル周りの抽象化が進められ（だからjavaeditlineへの置き換えも容易だった)るとともに、1.0.0で使われていた古いバージョンのjlineの代わりに、<code>jline 2.6</code>が使われているが、これにはバグがあり、<code>$HOME/.inputrc</code>でviモードをセットしていると、一切キー入力を受け付けない。<a href="https://jira.exoplatform.org/browse/CRASH-87">CRaSHにバグ報告</a>はしたのだが、$HOME/.inputrcはeditlineでも参照されており、この問題の回避のためにコメントアウトするわけにも行かないので、最新の<a href="https://github.com/diva-america/jline2">jline</a>を用いてローカルリポジトリに<code>jline-2.7-SNAPSHOT</code>としてデプロイし、これを使うことにした。このアップグレードにより無事viモードをjlineで使えるようになった。</p>
+
+<h2>JCR Jackrabbitスタンドアローン版の作成</h2>
+
+<p>CRaSHはWARとスタンドアローンJARの二つを成果物として出力しているが、<code>shell/core/</code>の下のスタンドアローンjarはJCRコマンドが含まれていない。そこで<a href="https://github.com/diva-america/crash/commit/328ab7ffcdf752dfbdbbd8bfe5df8cc2190ab625">maven assembly pluginのstandalone.xmlをjcr/jackrabbitに追加</a>して、JackRabbit用のスタンドアローンJARも作成するようにハックした。</p>
+
+<p><a href="https://github.com/diva-america/crash/tree/master-customized-for-diva">カスタマイズブランチ</a>に切替え、<code>mvn package</code>でビルドすれば、<code>jcr/jackrabbit/target</code>の下にスタンドアローン版が作成される。</p>
+
+<h2>CRaSHの実行イメージ</h2>
+
+<p>以上の修正で、JackRabbitリポジトリにアクセスできるようになった。操作イメージは下記のようになる。</p>
+
+<h3>起動</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">$</span> <span class="n">mvn</span> <span class="kn">package</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="n">$</span> <span class="n">cd</span> <span class="n">jcr</span><span class="o">/</span><span class="n">jackrabbit</span><span class="o">/</span><span class="n">target</span>
+</span><span class='line'><span class="n">$</span> <span class="n">java</span> <span class="o">-</span><span class="n">jar</span> <span class="n">crsh</span><span class="o">.</span><span class="na">jcr</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">-</span><span class="mf">1.1</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">cr1</span><span class="o">-</span><span class="n">SNAPSHOT</span><span class="o">-</span><span class="n">standalone</span><span class="o">.</span><span class="na">jar</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>コンソール</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="mi">1010</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">crsh</span><span class="o">.</span><span class="na">standalone</span><span class="o">.</span><span class="na">Bootstrap</span> <span class="o">-</span> <span class="n">Booting</span> <span class="n">crash</span> <span class="n">with</span> <span class="n">classpath</span><span class="o">=[]</span> <span class="n">and</span> <span class="n">mounts</span><span class="o">=[]</span>
+</span><span class='line'><span class="mi">1079</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">crsh</span><span class="o">.</span><span class="na">plugin</span><span class="o">.</span><span class="na">PluginManager</span> <span class="o">-</span> <span class="n">Loaded</span> <span class="n">plugin</span> <span class="n">Plugin</span><span class="o">[</span><span class="n">type</span><span class="o">=</span><span class="n">CRaSHShellFactory</span><span class="o">,</span><span class="n">interface</span><span class="o">=</span><span class="n">ShellFactory</span><span class="o">]</span>
+</span><span class='line'><span class="mi">1082</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">crsh</span><span class="o">.</span><span class="na">plugin</span><span class="o">.</span><span class="na">PluginManager</span> <span class="o">-</span> <span class="n">Loaded</span> <span class="n">plugin</span> <span class="n">Plugin</span><span class="o">[</span><span class="n">type</span><span class="o">=</span><span class="n">ProcessorIOHandler</span><span class="o">,</span><span class="n">interface</span><span class="o">=</span><span class="n">TermIOHandler</span><span class="o">]</span>
+</span><span class='line'><span class="mi">1084</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">crsh</span><span class="o">.</span><span class="na">plugin</span><span class="o">.</span><span class="na">PluginManager</span> <span class="o">-</span> <span class="n">Loaded</span> <span class="n">plugin</span> <span class="n">Plugin</span><span class="o">[</span><span class="n">type</span><span class="o">=</span><span class="n">JaasAuthenticationPlugin</span><span class="o">,</span><span class="n">interface</span><span class="o">=</span><span class="n">AuthenticationPlugin</span><span class="o">]</span>
+</span><span class='line'><span class="mi">1085</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">crsh</span><span class="o">.</span><span class="na">plugin</span><span class="o">.</span><span class="na">PluginManager</span> <span class="o">-</span> <span class="n">Loaded</span> <span class="n">plugin</span> <span class="n">Plugin</span><span class="o">[</span><span class="n">type</span><span class="o">=</span><span class="n">SimpleAuthenticationPlugin</span><span class="o">,</span><span class="n">interface</span><span class="o">=</span><span class="n">AuthenticationPlugin</span><span class="o">]</span>
+</span><span class='line'><span class="mi">1109</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">crsh</span><span class="o">.</span><span class="na">plugin</span><span class="o">.</span><span class="na">PluginManager</span> <span class="o">-</span> <span class="n">Initialized</span> <span class="n">plugin</span> <span class="n">Plugin</span><span class="o">[</span><span class="n">type</span><span class="o">=</span><span class="n">CRaSHShellFactory</span><span class="o">,</span><span class="n">interface</span><span class="o">=</span><span class="n">ShellFactory</span><span class="o">]</span>
+</span><span class='line'><span class="mi">1109</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">crsh</span><span class="o">.</span><span class="na">plugin</span><span class="o">.</span><span class="na">PluginManager</span> <span class="o">-</span> <span class="n">Initialized</span> <span class="n">plugin</span> <span class="n">Plugin</span><span class="o">[</span><span class="n">type</span><span class="o">=</span><span class="n">ProcessorIOHandler</span><span class="o">,</span><span class="n">interface</span><span class="o">=</span><span class="n">TermIOHandler</span><span class="o">]</span>
+</span><span class='line'><span class="mi">1109</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">crsh</span><span class="o">.</span><span class="na">plugin</span><span class="o">.</span><span class="na">PluginManager</span> <span class="o">-</span> <span class="n">Initialized</span> <span class="n">plugin</span> <span class="n">Plugin</span><span class="o">[</span><span class="n">type</span><span class="o">=</span><span class="n">JaasAuthenticationPlugin</span><span class="o">,</span><span class="n">interface</span><span class="o">=</span><span class="n">AuthenticationPlugin</span><span class="o">]</span>
+</span><span class='line'><span class="mi">1109</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">crsh</span><span class="o">.</span><span class="na">plugin</span><span class="o">.</span><span class="na">PluginManager</span> <span class="o">-</span> <span class="n">Initialized</span> <span class="n">plugin</span> <span class="n">Plugin</span><span class="o">[</span><span class="n">type</span><span class="o">=</span><span class="n">SimpleAuthenticationPlugin</span><span class="o">,</span><span class="n">interface</span><span class="o">=</span><span class="n">AuthenticationPlugin</span><span class="o">]</span>
+</span><span class='line'>   <span class="n">______</span>
+</span><span class='line'> <span class="o">.~</span>      <span class="o">~.</span> <span class="o">|</span><span class="err">`````````</span><span class="o">,</span>       <span class="o">.</span><span class="err">&#39;</span><span class="o">.</span>                   <span class="o">..</span><span class="sc">&#39;&#39;&#39;</span><span class="err">&#39;</span> <span class="o">|</span>         <span class="o">|</span>
+</span><span class='line'><span class="o">|</span>           <span class="o">|</span><span class="sc">&#39;&#39;&#39;</span><span class="o">|</span><span class="sc">&#39;&#39;&#39;</span><span class="err">&#39;&#39;</span>      <span class="o">.</span><span class="err">&#39;&#39;```</span><span class="o">.</span>              <span class="o">.</span><span class="err">&#39;&#39;</span>       <span class="o">|</span><span class="n">_________</span><span class="o">|</span>
+</span><span class='line'><span class="o">|</span>           <span class="o">|</span>    <span class="err">`</span><span class="o">.</span>       <span class="o">.</span><span class="err">&#39;</span>       <span class="err">`</span><span class="o">.</span>         <span class="o">..</span><span class="err">&#39;</span>          <span class="o">|</span>         <span class="o">|</span>
+</span><span class='line'> <span class="err">`</span><span class="o">.</span><span class="na">______</span><span class="o">.</span><span class="err">&#39;</span> <span class="o">|</span>      <span class="err">`</span><span class="o">.</span>   <span class="o">.</span><span class="err">&#39;</span>           <span class="err">`</span><span class="o">.</span> <span class="o">....</span><span class="err">&#39;&#39;</span>             <span class="o">|</span>         <span class="o">|</span> <span class="mf">1.1</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">cr1</span><span class="o">-</span><span class="n">SNAPSHOT</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">Follow</span> <span class="n">and</span> <span class="n">support</span> <span class="n">the</span> <span class="n">project</span> <span class="n">on</span> <span class="nl">http:</span><span class="c1">//vietj.github.com/crash</span>
+</span><span class='line'><span class="n">Welcome</span> <span class="n">to</span> <span class="n">mba</span><span class="o">-</span><span class="mi">001</span><span class="o">.</span><span class="na">local</span> <span class="o">+</span> <span class="o">!</span>
+</span><span class='line'><span class="n">It</span> <span class="n">is</span> <span class="n">Tue</span> <span class="n">Jun</span> <span class="mi">05</span> <span class="mi">13</span><span class="o">:</span><span class="mi">26</span><span class="o">:</span><span class="mi">20</span> <span class="n">PDT</span> <span class="mi">2012</span> <span class="n">now</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">%</span> <span class="n">repo</span> <span class="n">use</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">repository</span><span class="o">.</span><span class="na">uri</span><span class="o">=</span><span class="nl">file:</span><span class="c1">///Users/kenjin/github/diva_lab/synapse/target/jackrabbit</span>
+</span><span class='line'><span class="n">jcr</span><span class="o">.</span><span class="na">repository</span><span class="o">.</span><span class="na">name</span> <span class="o">:</span> <span class="n">Jackrabbit</span>
+</span><span class='line'><span class="n">jcr</span><span class="o">.</span><span class="na">repository</span><span class="o">.</span><span class="na">vendor</span> <span class="o">:</span> <span class="n">Apache</span> <span class="n">Software</span> <span class="n">Foundation</span>
+</span><span class='line'><span class="n">jcr</span><span class="o">.</span><span class="na">repository</span><span class="o">.</span><span class="na">vendor</span><span class="o">.</span><span class="na">url</span> <span class="o">:</span> <span class="nl">http:</span><span class="c1">//jackrabbit.apache.org/</span>
+</span><span class='line'><span class="n">jcr</span><span class="o">.</span><span class="na">repository</span><span class="o">.</span><span class="na">version</span> <span class="o">:</span> <span class="mf">2.4</span><span class="o">.</span><span class="mi">1</span>
+</span><span class='line'><span class="n">jcr</span><span class="o">.</span><span class="na">specification</span><span class="o">.</span><span class="na">name</span> <span class="o">:</span> <span class="n">Content</span> <span class="n">Repository</span> <span class="n">API</span> <span class="k">for</span> <span class="n">Java</span><span class="o">(</span><span class="n">TM</span><span class="o">)</span> <span class="n">Technology</span> <span class="n">Specification</span>
+</span><span class='line'><span class="n">jcr</span><span class="o">.</span><span class="na">specification</span><span class="o">.</span><span class="na">version</span> <span class="o">:</span> <span class="mf">2.0</span>
+</span><span class='line'><span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">spi</span><span class="o">.</span><span class="na">commons</span><span class="o">.</span><span class="na">AdditionalEventInfo</span> <span class="o">:</span> <span class="kc">true</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">%</span> <span class="n">ws</span> <span class="n">login</span> <span class="o">-</span><span class="n">u</span> <span class="n">admin</span> <span class="o">-</span><span class="n">p</span> <span class="n">admin</span> <span class="k">default</span>
+</span><span class='line'><span class="mi">128532</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">RepositoryImpl</span> <span class="o">-</span> <span class="n">Starting</span> <span class="n">repository</span><span class="o">...</span>
+</span><span class='line'><span class="mi">128539</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">fs</span><span class="o">.</span><span class="na">local</span><span class="o">.</span><span class="na">LocalFileSystem</span> <span class="o">-</span> <span class="n">LocalFileSystem</span> <span class="n">initialized</span> <span class="n">at</span> <span class="n">path</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">kenjin</span><span class="o">/</span><span class="n">github</span><span class="o">/</span><span class="n">diva_lab</span><span class="o">/</span><span class="n">synapse</span><span class="o">/</span><span class="n">target</span><span class="o">/</span><span class="n">jackrabbit</span><span class="o">/</span><span class="n">repository</span>
+</span><span class='line'><span class="mi">128859</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">fs</span><span class="o">.</span><span class="na">local</span><span class="o">.</span><span class="na">LocalFileSystem</span> <span class="o">-</span> <span class="n">LocalFileSystem</span> <span class="n">initialized</span> <span class="n">at</span> <span class="n">path</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">kenjin</span><span class="o">/</span><span class="n">github</span><span class="o">/</span><span class="n">diva_lab</span><span class="o">/</span><span class="n">synapse</span><span class="o">/</span><span class="n">target</span><span class="o">/</span><span class="n">jackrabbit</span><span class="o">/</span><span class="n">version</span>
+</span><span class='line'><span class="mi">130676</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">RepositoryImpl</span> <span class="o">-</span> <span class="n">initializing</span> <span class="n">workspace</span> <span class="err">&#39;</span><span class="k">default</span><span class="err">&#39;</span><span class="o">...</span>
+</span><span class='line'><span class="mi">130676</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">fs</span><span class="o">.</span><span class="na">local</span><span class="o">.</span><span class="na">LocalFileSystem</span> <span class="o">-</span> <span class="n">LocalFileSystem</span> <span class="n">initialized</span> <span class="n">at</span> <span class="n">path</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">kenjin</span><span class="o">/</span><span class="n">github</span><span class="o">/</span><span class="n">diva_lab</span><span class="o">/</span><span class="n">synapse</span><span class="o">/</span><span class="n">target</span><span class="o">/</span><span class="n">jackrabbit</span><span class="o">/</span><span class="n">workspaces</span><span class="o">/</span><span class="k">default</span>
+</span><span class='line'><span class="mi">132643</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">query</span><span class="o">.</span><span class="na">lucene</span><span class="o">.</span><span class="na">SearchIndex</span> <span class="o">-</span> <span class="n">Index</span> <span class="nl">initialized:</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">kenjin</span><span class="o">/</span><span class="n">github</span><span class="o">/</span><span class="n">diva_lab</span><span class="o">/</span><span class="n">synapse</span><span class="o">/</span><span class="n">target</span><span class="o">/</span><span class="n">jackrabbit</span><span class="o">/</span><span class="n">repository</span><span class="o">/</span><span class="n">index</span> <span class="nl">Version:</span> <span class="mi">3</span>
+</span><span class='line'><span class="mi">133153</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">query</span><span class="o">.</span><span class="na">lucene</span><span class="o">.</span><span class="na">SearchIndex</span> <span class="o">-</span> <span class="n">Index</span> <span class="nl">initialized:</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">kenjin</span><span class="o">/</span><span class="n">github</span><span class="o">/</span><span class="n">diva_lab</span><span class="o">/</span><span class="n">synapse</span><span class="o">/</span><span class="n">target</span><span class="o">/</span><span class="n">jackrabbit</span><span class="o">/</span><span class="n">workspaces</span><span class="o">/</span><span class="k">default</span><span class="o">/</span><span class="n">index</span> <span class="nl">Version:</span> <span class="mi">3</span>
+</span><span class='line'><span class="mi">133153</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">RepositoryImpl</span> <span class="o">-</span> <span class="n">workspace</span> <span class="err">&#39;</span><span class="k">default</span><span class="err">&#39;</span> <span class="n">initialized</span>
+</span><span class='line'><span class="mi">133167</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">RepositoryImpl</span> <span class="o">-</span> <span class="n">SecurityManager</span> <span class="o">=</span> <span class="kd">class</span> <span class="nc">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">DefaultSecurityManager</span>
+</span><span class='line'><span class="mi">133167</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">RepositoryImpl</span> <span class="o">-</span> <span class="n">initializing</span> <span class="n">workspace</span> <span class="err">&#39;</span><span class="n">security</span><span class="err">&#39;</span><span class="o">...</span>
+</span><span class='line'><span class="mi">133167</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">fs</span><span class="o">.</span><span class="na">local</span><span class="o">.</span><span class="na">LocalFileSystem</span> <span class="o">-</span> <span class="n">LocalFileSystem</span> <span class="n">initialized</span> <span class="n">at</span> <span class="n">path</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">kenjin</span><span class="o">/</span><span class="n">github</span><span class="o">/</span><span class="n">diva_lab</span><span class="o">/</span><span class="n">synapse</span><span class="o">/</span><span class="n">target</span><span class="o">/</span><span class="n">jackrabbit</span><span class="o">/</span><span class="n">workspaces</span><span class="o">/</span><span class="n">security</span>
+</span><span class='line'><span class="mi">133929</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">query</span><span class="o">.</span><span class="na">lucene</span><span class="o">.</span><span class="na">SearchIndex</span> <span class="o">-</span> <span class="n">Index</span> <span class="nl">initialized:</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">kenjin</span><span class="o">/</span><span class="n">github</span><span class="o">/</span><span class="n">diva_lab</span><span class="o">/</span><span class="n">synapse</span><span class="o">/</span><span class="n">target</span><span class="o">/</span><span class="n">jackrabbit</span><span class="o">/</span><span class="n">workspaces</span><span class="o">/</span><span class="n">security</span><span class="o">/</span><span class="n">index</span> <span class="nl">Version:</span> <span class="mi">3</span>
+</span><span class='line'><span class="mi">133929</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">RepositoryImpl</span> <span class="o">-</span> <span class="n">workspace</span> <span class="err">&#39;</span><span class="n">security</span><span class="err">&#39;</span> <span class="n">initialized</span>
+</span><span class='line'><span class="mi">133931</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">DefaultSecurityManager</span> <span class="o">-</span> <span class="nl">init:</span> <span class="n">use</span> <span class="n">Repository</span> <span class="n">Login</span><span class="o">-</span><span class="n">Configuration</span> <span class="k">for</span> <span class="n">Jackrabbit</span>
+</span><span class='line'><span class="mi">134138</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">RepositoryImpl</span> <span class="o">-</span> <span class="n">Repository</span> <span class="n">started</span> <span class="o">(</span><span class="mi">5605</span><span class="n">ms</span><span class="o">)</span>
+</span><span class='line'><span class="mi">134138</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">TransientRepository</span> <span class="o">-</span> <span class="n">Transient</span> <span class="n">repository</span> <span class="n">initialized</span>
+</span><span class='line'><span class="mi">134573</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">security</span><span class="o">.</span><span class="na">authorization</span><span class="o">.</span><span class="na">acl</span><span class="o">.</span><span class="na">CachingEntryCollector</span> <span class="o">-</span> <span class="n">Creating</span> <span class="n">cache</span> <span class="n">with</span> <span class="n">max</span> <span class="n">size</span> <span class="nl">of:</span> <span class="mi">5000</span>
+</span><span class='line'><span class="mi">134574</span> <span class="o">[</span><span class="n">main</span><span class="o">]</span> <span class="n">INFO</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">core</span><span class="o">.</span><span class="na">TransientRepository</span> <span class="o">-</span> <span class="n">Session</span> <span class="n">opened</span>
+</span><span class='line'><span class="n">Connected</span> <span class="n">to</span> <span class="n">workspace</span> <span class="k">default</span>
+</span><span class='line'><span class="o">%</span> <span class="n">ls</span>
+</span><span class='line'><span class="o">/</span>
+</span><span class='line'><span class="o">+-</span><span class="n">properties</span>
+</span><span class='line'><span class="o">|</span> <span class="o">+-</span><span class="nl">jcr:mixinTypes:</span> <span class="o">[</span><span class="nl">rep:</span><span class="n">AccessControllable</span><span class="o">]</span>
+</span><span class='line'><span class="o">|</span> <span class="o">+-</span><span class="nl">jcr:primaryType:</span> <span class="nl">rep:</span><span class="n">root</span>
+</span><span class='line'><span class="o">+-</span><span class="n">children</span>
+</span><span class='line'>  <span class="o">+-/</span><span class="nl">jcr:</span><span class="n">system</span>
+</span><span class='line'>  <span class="o">+-/</span><span class="nl">synapse:</span><span class="n">projects</span>
+</span><span class='line'>  <span class="o">+-/</span><span class="nl">rep:</span><span class="n">policy</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">%</span> <span class="n">cd</span> <span class="nl">jcr:</span><span class="n">system</span><span class="o">/</span>
+</span><span class='line'><span class="o">/</span><span class="nl">jcr:</span><span class="n">system</span>
+</span><span class='line'><span class="o">%</span> <span class="n">ls</span>
+</span><span class='line'><span class="o">/</span><span class="nl">jcr:</span><span class="n">system</span>
+</span><span class='line'><span class="o">+-</span><span class="n">properties</span>
+</span><span class='line'><span class="o">|</span> <span class="o">+-</span><span class="nl">jcr:primaryType:</span> <span class="nl">rep:</span><span class="n">system</span>
+</span><span class='line'><span class="o">+-</span><span class="n">children</span>
+</span><span class='line'>  <span class="o">+-/</span><span class="nl">jcr:</span><span class="n">system</span><span class="o">/</span><span class="nl">jcr:</span><span class="n">versionStorage</span>
+</span><span class='line'>  <span class="o">+-/</span><span class="nl">jcr:</span><span class="n">system</span><span class="o">/</span><span class="nl">jcr:</span><span class="n">activities</span>
+</span><span class='line'>  <span class="o">+-/</span><span class="nl">jcr:</span><span class="n">system</span><span class="o">/</span><span class="nl">jcr:</span><span class="n">nodeTypes</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>あとは、<a href="http://julienviet.com/crash/#doc">CRaSHのマニュアル</a>で説明されているコマンドを駆使して、JCRリポジトリを操作することができる。</p>
+
+<p>上記の例では、<code>repo use</code>のURIをfileスキームで指定したが、RMI, WebDAV, JNDIにリソースとしてバインドされているリポジトリに接続することも可能である。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="o">%</span> <span class="n">repo</span> <span class="n">ls</span>
+</span><span class='line'><span class="n">Available</span> <span class="n">JCR</span> <span class="nl">plugins:</span>
+</span><span class='line'><span class="n">jackrabbit</span> <span class="o">-</span> <span class="n">Jackrabbit</span> <span class="n">JCR</span> <span class="n">plugin</span> <span class="o">-</span> <span class="n">The</span> <span class="n">command</span> <span class="n">must</span> <span class="n">at</span> <span class="n">least</span> <span class="n">have</span> <span class="n">a</span> <span class="n">URL</span> <span class="n">parameter</span> <span class="n">to</span> <span class="n">be</span> <span class="n">used</span> <span class="n">in</span> <span class="n">connecting</span> <span class="n">to</span> <span class="n">the</span> <span class="n">repository</span><span class="o">.</span>
+</span><span class='line'><span class="n">To</span> <span class="n">access</span> <span class="n">a</span> <span class="n">repository</span> <span class="n">via</span> <span class="nl">RMI:</span> <span class="err">&#39;</span><span class="n">repo</span> <span class="n">use</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">repository</span><span class="o">.</span><span class="na">uri</span><span class="o">=</span><span class="nl">rmi:</span><span class="c1">//localhost:1099/jackrabbit&#39;</span>
+</span><span class='line'><span class="n">To</span> <span class="n">access</span> <span class="n">a</span> <span class="n">repository</span> <span class="n">via</span> <span class="nl">JNDI:</span> <span class="err">&#39;</span><span class="n">repo</span> <span class="n">use</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">repository</span><span class="o">.</span><span class="na">uri</span><span class="o">=</span><span class="nl">jndi:java:</span><span class="n">comp</span><span class="o">/</span><span class="n">env</span><span class="o">/</span><span class="n">jcr</span><span class="o">/</span><span class="n">jackrabbit</span><span class="err">&#39;</span>
+</span><span class='line'><span class="n">To</span> <span class="n">access</span> <span class="n">a</span> <span class="n">repository</span> <span class="n">via</span> <span class="nl">WebDAV:</span> <span class="err">&#39;</span><span class="n">repo</span> <span class="n">use</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">jackrabbit</span><span class="o">.</span><span class="na">repository</span><span class="o">.</span><span class="na">uri</span><span class="o">=</span><span class="nl">http:</span><span class="c1">//localhost:8080/jackrabbit/repository/&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[XSD 2 CND Converter]]></title>
+    <link href="http://k2n.github.com/blog/2012/06/01/xsd-2-cnd-converter/"/>
+    <updated>2012-06-01T14:36:00-07:00</updated>
+    <id>http://k2n.github.com/blog/2012/06/01/xsd-2-cnd-converter</id>
+    <content type="html"><![CDATA[<p>JCRのNode Type Definitionを見ていると、XML Schemaと似ている点が多い。JCRが提供している階層構造のストレージはXMLの永続化に適していることが予想される。</p>
+
+<p>となると、XML SchemaをCNDに変換できるのではないだろうかという予想のもと、調べてみると、Jackrabbitプロジェクトのコードベースの一部に、<a href="http://svn.apache.org/repos/asf/jackrabbit/sandbox/inactive/xsd2cnd/">xsd2cnd</a>というツールがあることがわかった。但し、このツールはJackrabbitの本流ではなく、sandbox、しかもinactiveの下に格納されていることから、長いことメンテされていない状況である。2008年に<code>sandbox/inactive</code>に移動されており、それ以来コードの更新がない。</p>
+
+<p>確認のためローカルにダウンロードしてみると、なんとmavenがバージョン1である。懐かしい。maven2以降で動作させるためには、<code>project.xml</code>と<code>project.properties</code>を<code>pom.xml</code>に変換する必要がある。幸い、変換ツールが提供されている。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ mvn2 one:convert</span></code></pre></td></tr></table></div></figure>
+
+
+<p>maven3ではもはや提供されていないようなので、maven2を使う必要がある。</p>
+
+<p>動くように<a href="https://github.com/diva-america/xsd2cnd">ハック</a>して、XSDを変換してみたが、期待していた結果が得られなかった。このままでは使えず、改善が必要なようである。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[JCR Node Types]]></title>

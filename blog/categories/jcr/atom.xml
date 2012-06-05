@@ -4,7 +4,7 @@
   <title><![CDATA[Category: jcr | Code Critique]]></title>
   <link href="http://k2n.github.com/blog/categories/jcr/atom.xml" rel="self"/>
   <link href="http://k2n.github.com/"/>
-  <updated>2012-05-31T20:42:59-07:00</updated>
+  <updated>2012-06-05T13:50:46-07:00</updated>
   <id>http://k2n.github.com/</id>
   <author>
     <name><![CDATA[Kenji Nakamura]]></name>
@@ -12,6 +12,212 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[CRaSH]]></title>
+    <link href="http://k2n.github.com/blog/2012/06/05/crash/"/>
+    <updated>2012-06-05T12:26:00-07:00</updated>
+    <id>http://k2n.github.com/blog/2012/06/05/crash</id>
+    <content type="html"><![CDATA[<p>JCRを使う際、対話的にリポジトリを操作できるUIがあると便利である。筆者がいくつか試した末、気に入ったのは下記の二つである。</p>
+
+<ul>
+<li><a href="http://www.subshell.com/en/toromiro/toromiro104.html">Toromiro</a> ... ドイツのSubShellで開発されている、Eclipse RCPベースのGUI。商用で600ユーロとそれなりの価格。30日間の試用が可能。</li>
+<li><a href="http://julienviet.com/crash/#home">CRaSH</a> ... フランスのポータルフレームワーク、eXoの開発者が公開している、Java+Groovyで記述された対話的シェル。LGPLで配布されている。</li>
+</ul>
+
+
+<p>CRaSHは拡張性の高さが売りで、groovyスクリプトを書くだけでコマンドを拡張することができる。また、<a href="https://github.com/diva-america/crash/tree/master/jcr">JCRリポジトリ用のコマンド</a>も用意されている。
+最新版は1.1.0-cr1だが、いくつか問題点が散見されたので、コードをハックすることにした。</p>
+
+<h2>対話式コマンドラインの操作性改善</h2>
+
+<p>jlineはGNU ReadlineやBSD editlineのように、対話式コマンドラインを提供するライブラリである。jlineはほぼ100%Javaで実装されている。（Windows用のDLLが含まれているらしい）長らく開発が進んでいなかったのだが、scalaシェルで使われていることもあり、最近<a href="https://github.com/jline/jline2">jline2</a>として拡張する動きがある。</p>
+
+<p>最初CRaSH 1.0.0を使ったときは、古いバージョンのjlineが使われていたため、emacsやviのキーバインディングがエミュレートされておらず、使いづらさを感じた。そこでハックすることとした。</p>
+
+<h3>JavaEditline</h3>
+
+<p>まずは、editlineのjava JNIラッパーである、<a href="https://github.com/bmc/javaeditline">javaeditline</a>を使って、<a href="https://github.com/diva-america/crash/tree/javaeditline">jlineを置き換えるハック</a>を行った。editlineを使うためにはJNIライブラリを配布する必要があり、通常は手作業で<code>LD_LIBRARY_PATH</code>(linux) <code>/Library/Java/Extensions</code>(mac os x)にJNIライブラリをコピーしなければならない。これは不親切なので、CRaSHで、実行用jarファイルを作成するのに使われている<a href="https://github.com/diva-america/crash/blob/javaeditline/shell/core/src/main/assembly/standalone.xml">maven assembly plugin</a>の代わりに、<a href="http://one-jar.sourceforge.net/">One JAR</a>の<a href="https://github.com/k2n/onejar-maven-plugin">maven plugin</a>を使うことにした。</p>
+
+<h4>onejar-maven-pluginのハック</h4>
+
+<p>JavaeditlineのJNIライブラリは、linux 64bit, 32bit, mac os x版をそれぞれの環境でmakeし、同梱することにした。が、オリジナルのonejar-maven-pluginは全て<code>binlib/</code>にコピーするため、アーキテクチャが異なる同名のライブラリを共存させることができない。<a href="http://code.google.com/p/onejar-maven-plugin/issues/detail?id=25&amp;q=binlib">既知の問題</a>なのだが、パッチが適用されていないため、githubでフォークし対応することとした。
+具体的には、
+```
+binlib +-- linux32 -- libjavaeditlines.so</p>
+
+<pre><code>   |
+   +-- linux64 -- libjavaeditlines.so
+   |
+   +-- macosx -- dynjavaeditlines.jnilib
+</code></pre>
+
+<p>```
+の階層構造を保ったまま実行jarにアーカイブしたい。（OneJar側でこのような構造を期待されているので）
+そこで、下記のようなロジックを加えた。</p>
+
+<p>``` java
+// Add native libraries</p>
+
+<pre><code>    if (binlibs != null) {
+        for (FileSet eachFileSet : binlibs) {
+            File baseDir = new File(eachFileSet.getDirectory());
+            List&lt;File&gt; includedFiles = toFileList(eachFileSet);
+            debug("Adding [%s] native libraries...", includedFiles.size());
+            for (File eachIncludedFile : includedFiles) {
+                File parent = new File(eachIncludedFile.getParent());
+                String relativePath = baseDir.toURI().relativize(parent     // &lt;== URI.relativizeを活用
+                        .toURI()).getPath();
+                addToZip(eachIncludedFile, "binlib/" + relativePath, out);
+            }
+        }
+    }
+</code></pre>
+
+<p>```
+ポイントはURI.relativezeメソッドの活用である。JDK7ではFileクラスにも同様のメソッドが導入されたが、この方法で古いJDKでも動作させることができる。但し、この相対化は同じ階層の先祖と子孫の間でしか使えないことに注意。</p>
+
+<p>javaeditline対応版をビルドするには、<a href="https://github.com/diva-america/crash/tree/javaeditline">Fork版CRaSH</a>をクローンして、<code>javaeditilne</code>にブランチを切り替えて、トップレベルから<code>mvn package</code>を実行すればよい。</p>
+
+<p>以上で、無事editlineをjlineの代わりに使うことができた。もちろん、稼働するOSには<code>apt-get</code>などでeditlineを予めインストールしておく必要がある。（mac os xはプリインストールされているので作業は不要）
+これで、<code>$HOME/.inputrc</code>に下記のようなエントリーを入れることで、キーバインディングをVi風味に変更することが可能となる。
+<code>
+set editing-mode vi
+</code>
+editlineが見つからない場合は、jlineをフォールバックとして使用する動作となっている。
+jline版に対するディグレッションとして、サブコマンド（例えば<code>system</code>のサブコマンドには<code>propset</code>, <code>propls</code>などがある）のタブキーによる補完が動かない。</p>
+
+<h3>jlineのアップグレード</h3>
+
+<p>土曜にjavaeditline版を作り、翌日サブコマンドの補完問題をfixしようかと考えていたところ、jlineでもviモードを実装中という情報を見つけ、単純にjlineをアップグレードすればいいのではないかという案を思いついた。そこでeditline版はまずここまでとし、jlineを見て見ることにした。</p>
+
+<p>crashの1.1.0-cr1ではシェル周りの抽象化が進められ（だからjavaeditlineへの置き換えも容易だった)るとともに、1.0.0で使われていた古いバージョンのjlineの代わりに、<code>jline 2.6</code>が使われているが、これにはバグがあり、<code>$HOME/.inputrc</code>でviモードをセットしていると、一切キー入力を受け付けない。<a href="https://jira.exoplatform.org/browse/CRASH-87">CRaSHにバグ報告</a>はしたのだが、$HOME/.inputrcはeditlineでも参照されており、この問題の回避のためにコメントアウトするわけにも行かないので、最新の<a href="https://github.com/diva-america/jline2">jline</a>を用いてローカルリポジトリに<code>jline-2.7-SNAPSHOT</code>としてデプロイし、これを使うことにした。このアップグレードにより無事viモードをjlineで使えるようになった。</p>
+
+<h2>JCR Jackrabbitスタンドアローン版の作成</h2>
+
+<p>CRaSHはWARとスタンドアローンJARの二つを成果物として出力しているが、<code>shell/core/</code>の下のスタンドアローンjarはJCRコマンドが含まれていない。そこで<a href="https://github.com/diva-america/crash/commit/328ab7ffcdf752dfbdbbd8bfe5df8cc2190ab625">maven assembly pluginのstandalone.xmlをjcr/jackrabbitに追加</a>して、JackRabbit用のスタンドアローンJARも作成するようにハックした。</p>
+
+<p><a href="https://github.com/diva-america/crash/tree/master-customized-for-diva">カスタマイズブランチ</a>に切替え、<code>mvn package</code>でビルドすれば、<code>jcr/jackrabbit/target</code>の下にスタンドアローン版が作成される。</p>
+
+<h2>CRaSHの実行イメージ</h2>
+
+<p>以上の修正で、JackRabbitリポジトリにアクセスできるようになった。操作イメージは下記のようになる。</p>
+
+<h3>起動</h3>
+
+<p><code>
+$ mvn package
+...
+$ cd jcr/jackrabbit/target
+$ java -jar crsh.jcr.jackrabbit-1.1.0-cr1-SNAPSHOT-standalone.jar
+</code></p>
+
+<h3>コンソール</h3>
+
+<p>```
+1010 [main] INFO org.crsh.standalone.Bootstrap - Booting crash with classpath=[] and mounts=[]
+1079 [main] INFO org.crsh.plugin.PluginManager - Loaded plugin Plugin[type=CRaSHShellFactory,interface=ShellFactory]
+1082 [main] INFO org.crsh.plugin.PluginManager - Loaded plugin Plugin[type=ProcessorIOHandler,interface=TermIOHandler]
+1084 [main] INFO org.crsh.plugin.PluginManager - Loaded plugin Plugin[type=JaasAuthenticationPlugin,interface=AuthenticationPlugin]
+1085 [main] INFO org.crsh.plugin.PluginManager - Loaded plugin Plugin[type=SimpleAuthenticationPlugin,interface=AuthenticationPlugin]
+1109 [main] INFO org.crsh.plugin.PluginManager - Initialized plugin Plugin[type=CRaSHShellFactory,interface=ShellFactory]
+1109 [main] INFO org.crsh.plugin.PluginManager - Initialized plugin Plugin[type=ProcessorIOHandler,interface=TermIOHandler]
+1109 [main] INFO org.crsh.plugin.PluginManager - Initialized plugin Plugin[type=JaasAuthenticationPlugin,interface=AuthenticationPlugin]
+1109 [main] INFO org.crsh.plugin.PluginManager - Initialized plugin Plugin[type=SimpleAuthenticationPlugin,interface=AuthenticationPlugin]</p>
+
+<hr />
+
+<p> .~      ~. |<code>``````,       .'.                   ..'''' |         |
+|           |'''|'''''      .''</code>.              .''       |_________|
+|           |    <code>.       .'      </code>.         ..'          |         |
+ <code>.______.' |     </code>.   .'           `. ....''             |         | 1.1.0-cr1-SNAPSHOT</p>
+
+<p>Follow and support the project on http://vietj.github.com/crash
+Welcome to mba-001.local + !
+It is Tue Jun 05 13:26:20 PDT 2012 now</p>
+
+<p>% repo use org.apache.jackrabbit.repository.uri=file:///Users/kenjin/github/diva_lab/synapse/target/jackrabbit
+jcr.repository.name : Jackrabbit
+jcr.repository.vendor : Apache Software Foundation
+jcr.repository.vendor.url : http://jackrabbit.apache.org/
+jcr.repository.version : 2.4.1
+jcr.specification.name : Content Repository API for Java(TM) Technology Specification
+jcr.specification.version : 2.0
+org.apache.jackrabbit.spi.commons.AdditionalEventInfo : true</p>
+
+<p>% ws login -u admin -p admin default
+128532 [main] INFO org.apache.jackrabbit.core.RepositoryImpl - Starting repository...
+128539 [main] INFO org.apache.jackrabbit.core.fs.local.LocalFileSystem - LocalFileSystem initialized at path /Users/kenjin/github/diva_lab/synapse/target/jackrabbit/repository
+128859 [main] INFO org.apache.jackrabbit.core.fs.local.LocalFileSystem - LocalFileSystem initialized at path /Users/kenjin/github/diva_lab/synapse/target/jackrabbit/version
+130676 [main] INFO org.apache.jackrabbit.core.RepositoryImpl - initializing workspace 'default'...
+130676 [main] INFO org.apache.jackrabbit.core.fs.local.LocalFileSystem - LocalFileSystem initialized at path /Users/kenjin/github/diva_lab/synapse/target/jackrabbit/workspaces/default
+132643 [main] INFO org.apache.jackrabbit.core.query.lucene.SearchIndex - Index initialized: /Users/kenjin/github/diva_lab/synapse/target/jackrabbit/repository/index Version: 3
+133153 [main] INFO org.apache.jackrabbit.core.query.lucene.SearchIndex - Index initialized: /Users/kenjin/github/diva_lab/synapse/target/jackrabbit/workspaces/default/index Version: 3
+133153 [main] INFO org.apache.jackrabbit.core.RepositoryImpl - workspace 'default' initialized
+133167 [main] INFO org.apache.jackrabbit.core.RepositoryImpl - SecurityManager = class org.apache.jackrabbit.core.DefaultSecurityManager
+133167 [main] INFO org.apache.jackrabbit.core.RepositoryImpl - initializing workspace 'security'...
+133167 [main] INFO org.apache.jackrabbit.core.fs.local.LocalFileSystem - LocalFileSystem initialized at path /Users/kenjin/github/diva_lab/synapse/target/jackrabbit/workspaces/security
+133929 [main] INFO org.apache.jackrabbit.core.query.lucene.SearchIndex - Index initialized: /Users/kenjin/github/diva_lab/synapse/target/jackrabbit/workspaces/security/index Version: 3
+133929 [main] INFO org.apache.jackrabbit.core.RepositoryImpl - workspace 'security' initialized
+133931 [main] INFO org.apache.jackrabbit.core.DefaultSecurityManager - init: use Repository Login-Configuration for Jackrabbit
+134138 [main] INFO org.apache.jackrabbit.core.RepositoryImpl - Repository started (5605ms)
+134138 [main] INFO org.apache.jackrabbit.core.TransientRepository - Transient repository initialized
+134573 [main] INFO org.apache.jackrabbit.core.security.authorization.acl.CachingEntryCollector - Creating cache with max size of: 5000
+134574 [main] INFO org.apache.jackrabbit.core.TransientRepository - Session opened
+Connected to workspace default
+% ls
+/
++-properties
+| +-jcr:mixinTypes: [rep:AccessControllable]
+| +-jcr:primaryType: rep:root
++-children
+  +-/jcr:system
+  +-/synapse:projects
+  +-/rep:policy</p>
+
+<p>% cd jcr:system/
+/jcr:system
+% ls
+/jcr:system
++-properties
+| +-jcr:primaryType: rep:system
++-children
+  +-/jcr:system/jcr:versionStorage
+  +-/jcr:system/jcr:activities
+  +-/jcr:system/jcr:nodeTypes
+```
+あとは、<a href="http://julienviet.com/crash/#doc">CRaSHのマニュアル</a>で説明されているコマンドを駆使して、JCRリポジトリを操作することができる。</p>
+
+<p>上記の例では、<code>repo use</code>のURIをfileスキームで指定したが、RMI, WebDAV, JNDIにリソースとしてバインドされているリポジトリに接続することも可能である。
+<code>
+% repo ls
+Available JCR plugins:
+jackrabbit - Jackrabbit JCR plugin - The command must at least have a URL parameter to be used in connecting to the repository.
+To access a repository via RMI: 'repo use org.apache.jackrabbit.repository.uri=rmi://localhost:1099/jackrabbit'
+To access a repository via JNDI: 'repo use org.apache.jackrabbit.repository.uri=jndi:java:comp/env/jcr/jackrabbit'
+To access a repository via WebDAV: 'repo use org.apache.jackrabbit.repository.uri=http://localhost:8080/jackrabbit/repository/'
+</code></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[XSD 2 CND Converter]]></title>
+    <link href="http://k2n.github.com/blog/2012/06/01/xsd-2-cnd-converter/"/>
+    <updated>2012-06-01T14:36:00-07:00</updated>
+    <id>http://k2n.github.com/blog/2012/06/01/xsd-2-cnd-converter</id>
+    <content type="html"><![CDATA[<p>JCRのNode Type Definitionを見ていると、XML Schemaと似ている点が多い。JCRが提供している階層構造のストレージはXMLの永続化に適していることが予想される。</p>
+
+<p>となると、XML SchemaをCNDに変換できるのではないだろうかという予想のもと、調べてみると、Jackrabbitプロジェクトのコードベースの一部に、<a href="http://svn.apache.org/repos/asf/jackrabbit/sandbox/inactive/xsd2cnd/">xsd2cnd</a>というツールがあることがわかった。但し、このツールはJackrabbitの本流ではなく、sandbox、しかもinactiveの下に格納されていることから、長いことメンテされていない状況である。2008年に<code>sandbox/inactive</code>に移動されており、それ以来コードの更新がない。</p>
+
+<p>確認のためローカルにダウンロードしてみると、なんとmavenがバージョン1である。懐かしい。maven2以降で動作させるためには、<code>project.xml</code>と<code>project.properties</code>を<code>pom.xml</code>に変換する必要がある。幸い、変換ツールが提供されている。
+<code>
+$ mvn2 one:convert
+</code>
+maven3ではもはや提供されていないようなので、maven2を使う必要がある。</p>
+
+<p>動くように<a href="https://github.com/diva-america/xsd2cnd">ハック</a>して、XSDを変換してみたが、期待していた結果が得られなかった。このままでは使えず、改善が必要なようである。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[JCR Node Types]]></title>
