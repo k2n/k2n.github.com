@@ -4,7 +4,7 @@
   <title><![CDATA[Code Critique]]></title>
   <link href="http://k2n.github.com/atom.xml" rel="self"/>
   <link href="http://k2n.github.com/"/>
-  <updated>2012-06-05T13:50:46-07:00</updated>
+  <updated>2012-06-19T16:13:57-07:00</updated>
   <id>http://k2n.github.com/</id>
   <author>
     <name><![CDATA[Kenji Nakamura]]></name>
@@ -12,6 +12,228 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[JBoss ModeShape]]></title>
+    <link href="http://k2n.github.com/blog/2012/06/18/jboss-modeshape/"/>
+    <updated>2012-06-18T16:39:00-07:00</updated>
+    <id>http://k2n.github.com/blog/2012/06/18/jboss-modeshape</id>
+    <content type="html"><![CDATA[<h1>JBoss ModeShapeとは</h1>
+
+<ul>
+<li>JCR2.0 <a href="http://www.jcp.org/en/jsr/detail?id=283">JSR-283</a>の実装の一つ。</li>
+<li>LGPL2.1のライセンスで配布されているため、商用製品への組み込みが可能。（但し制限あり。<a href="http://ja.wikipedia.org/wiki/GNU_Lesser_General_Public_License">参考</a>)</li>
+<li>JCR2.0で定められている必須機能の全てと、オプショナル機能のほとんどを実装している。
+
+<h2>JCR-SQL2の拡張</h2>
+
+<p>JCR2.0で定義されている、JCR-SQL2とJCR-QOM（Query Object Model)、JCR1.0で定義されていたJCR-SQLとXPath、さらに全文検索的なクエリが可能になっている。</p></li>
+<li>JCR-SQL2については、定義されている、<code>LEFT OUTER JOIN</code>, <code>RIGHT OUTER JOIN</code>, <code>INNER JOIN</code>に加え、<code>FULL OUTER JOIN</code>と<code>CROSS JOIN</code>をサポートしている。</li>
+<li>複数のリザルトセットに対して、<code>INTERSECT</code>, <code>UNION</code>, <code>EXCEPT</code>オペレーションを適用することができる。標準SQL同様、リザルトセット群は同一のカラムを保持していることが前提である。<code>UNION</code>は両者の合成、<code>INTERSECT</code>は両者の差分、<code>EXCEPT</code>は両者に共通の部分を返す。<code>ALL</code>キーワードをつけていない場合、重複行は削除される。</li>
+<li><code>SELECT DISTINCT</code>で、重複を削除することができる。</li>
+<li><code>LIMIT count</code>句で返される行数の上限を規定することができる。<code>OFFSET number</code>を指定するとスキップする行数を指定することができる。</li>
+<li><code>DEPTH</code>, <code>PATH</code>でそれぞれ、深さ、幅を指定することが可能。文法は、JCR-SQL2で定義されている<code>NAME</code>, <code>LOCALNAME</code>と同様の使い方。</li>
+<li><code>REFERENCE</code>が動的オペランドとして追加されている。使い方はJCR2.0の<code>PropertyValue</code>と同様で、<code>REFERENCE([&lt;selectorName&gt;.]&lt;propertyName&gt;)</code> で指定したセレクタ、プロパティ名による制限をかけることができる。</li>
+<li><code>IN</code>と<code>NOT IN</code>句で、静的なオペランドを複数列挙する方法をサポートしている。 例：<code>WHERE .... [my:type].[prop1] IN (3,5,7,10,11)...</code></li>
+<li><code>BETWEEN</code>句で、よりわかりやすく簡潔な範囲の指定が可能。例：<code>WHERE ... [my:type].[prop1] BETWEEN 3 EXCLUSIVE AND 10...</code></li>
+<li>簡単な四則演算が数字ベースのクライテリアとorder-by句で可能。例：<code>... WHERE SCORE(type1) + SCORE(type2) &gt; 1.0</code>, <code>... ORDER BY (SCORE(type1) * SCORE(type2)) ASC, LENGTH(type2.property1) DESC</code>など</li>
+<li>静的なオペランドをとることが出来る場所であればどこでも、（相関関係のない）サブクエリを使用することが可能。サブクエリの入れ子もサポートされている。サブクエリは単一のカラムを返す必要があり、各行の値がリテラル値として扱われる。サブクエリを使用している句が単一値だけを必要としている場合（比較など）は最初の行の値だけが用いられる。例：<code>WHERE ... [mytype].[prop1] IN ( SELECT [my:prop2] FROM [my:type2] WHERE [my:prop3] &lt; '1000') AND ...</code></li>
+<li>擬似カラムのサポート
+
+<h2>コネクタ</h2>
+
+<p>様々なバックエンドデータストレージをサポートするコネクタが提供されている。</p></li>
+<li>インメモリコネクタ：データを一時的なメモリに格納する。小中規模のデータを、一時的に格納しておく用途、キャシュなどに適している。</li>
+<li>ファイルシステムコネクタ：<code>nt:file</code>と<code>nt:folder</code>標準ノードをファイルシステムに格納するコネクタ。この二つのタイプで指定されている以外のプロパティが存在する場合、設定によって、ロギング、無視、エラー、格納の4通りの振舞いを選ぶことができる。格納する場合、<code>.modeshape</code>拡張子のテキストファイルに情報が書き込まれる。</li>
+<li>データベースコネクタ：JPA(Hibernate)を下層のレイヤーとして用い、RDBMSに格納するためのコネクタ。グラフ構造のデータを格納するのに最適化されたスキーマをRDB上に作成しデータを格納する。</li>
+<li>JCRコネクタ：他のJCRリポジトリをストレージとして用いるコネクタ。これを利用して、複数のリポジトリを連携させることも可能である。</li>
+<li>フェデレーションコネクタ：複数のリポジトリを束ねて、一つの仮想的なツリーを構築するコネクタ。例えば、下記の二つのリポジトリが存在するとする。</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>+- a
+</span><span class='line'>|  +- i
+</span><span class='line'>|  +- j
+</span><span class='line'>+- b
+</span><span class='line'>   +- k
+</span><span class='line'>   +- m
+</span><span class='line'>   +- n</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>+- foo
+</span><span class='line'>   +- bar
+</span><span class='line'>   |  +- baz
+</span><span class='line'>   |  |  +- taz
+</span><span class='line'>   |  |  +- zaz
+</span><span class='line'>   |  +- raz
+</span><span class='line'>   +- bum
+</span><span class='line'>      +- bot</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>この二つのリポジトリ（物理的なストレージが異なっていても構わない）を下記設定で統合する。
+</code></pre>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/ =&gt; /                         for source "S1"
+</span><span class='line'>/alpha =&gt; /foo/bar             for source "S2"</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>すると、統合した結果下記のような一つの仮想的なツリーを構築できる。
+</code></pre>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>+- a
+</span><span class='line'>|  +- i
+</span><span class='line'>|  +- j
+</span><span class='line'>+- b
+</span><span class='line'>|  +- k
+</span><span class='line'>|  +- m
+</span><span class='line'>|  +- n
+</span><span class='line'>+- alpha
+</span><span class='line'>   +- baz
+</span><span class='line'>      +- taz
+</span><span class='line'>      |  +- zaz
+</span><span class='line'>      +- raz</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>マッピング定義で、`/foo/bum`は指定されていないので統合されたツリーには反映されていないことに注目。
+</code></pre>
+
+<ul>
+<li>Subversionコネクタ：Subversionの内容を、<code>nt:folder</code>と<code>nt:file</code>ノードを使用して表現するコネクタ。リード・ライトの両方が可能。</li>
+<li>JBoss Cacheコネクタ：JBoss Cache（クラスタリングソリューション：JBoss Infinispanがその役割を後継している）を用いたJCRリポジトリを生成するためのコネクタ。新規ではInfinispanを用いるべき。</li>
+<li>Infinispanコネクタ：複数のノードのヒープメモリを仮想的な一つのメモリとして提供するInfinispanをJCRリポジトリのストレージとして利用するためのコネクタ。</li>
+<li>Diskコネクタ：ファイルシステム上にModeShape固有のファイルフォーマットで永続化するJCRリポジトリ。ファイルシステムコネクタは、ファイルシステム上に既に存在するデータをJCRリポジトリとしてアクセス可能にすることに重きがおかれているが、このコネクタはファイルシステム上にJCRデータを効率的に格納することを目的として作られている。</li>
+<li>JDBCメタデータコネクタ：RDBのカタログ、スキーマ、テーブル構造などのメタデータをJCRリポジトリとして表現するリードオンリーのコネクタ。下記のようなイメージ</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/ (root node)
+</span><span class='line'>    + &lt;catalog name&gt; - DB上のカタログごとにノードが作成される。
+</span><span class='line'>        + &lt;schema name&gt; - カタログ内のスキーマごとにノードが作成される。
+</span><span class='line'>            + tables - スキーマ内の全てのテーブルの親ノード
+</span><span class='line'>            |   + &lt;table name&gt; - テーブル名
+</span><span class='line'>            |      + &lt;column name&gt; - カラム名
+</span><span class='line'>            + procedures - スキーマ内の全てのプロシジャの親ノード
+</span><span class='line'>                + &lt;procedure name&gt; - スキーマ内のプロシジャごとにノードが作成される</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>シーケンサー</h2>
+
+<p>シーケンサーは、JPEG, GIF, PNGなどのイメージファイル、XMLスキーマ、XMLファイル、Javaクラス、Javaソースコード、CSV、MS Office、MP3など、様々なフォーマットのファイルをJCRリポジトリに格納する際に、有益な情報を抽出し、ノードとプロパティにそのメタ情報を格納するインターフェース。POJOとして実装できるので、カスタムのシーケンサーを追加することが可能。
+例えば、Microsoft Word, Excel, Powerpointファイルからは、下記の情報を抽出することが可能。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>[msoffice:metadata] &gt; nt:unstructured, mix:mimeType
+</span><span class='line'>  - msoffice:title (string)
+</span><span class='line'>  - msoffice:subject (string)
+</span><span class='line'>  - msoffice:author (string)
+</span><span class='line'>  - msoffice:keywords (string)
+</span><span class='line'>  - msoffice:comment (string)
+</span><span class='line'>  - msoffice:template (string)
+</span><span class='line'>  - msoffice:last_saved_by (string)
+</span><span class='line'>  - msoffice:revision (string)
+</span><span class='line'>  - msoffice:total_editing_time (long)
+</span><span class='line'>  - msoffice:last_printed (date)
+</span><span class='line'>  - msoffice:created (date)
+</span><span class='line'>  - msoffice:saved (date)
+</span><span class='line'>  - msoffice:pages (long)
+</span><span class='line'>  - msoffice:words (long)
+</span><span class='line'>  - msoffice:characters (long)
+</span><span class='line'>  - msoffice:creating_application (string)
+</span><span class='line'>  - msoffice:thumbnail (binary)
+</span><span class='line'>
+</span><span class='line'>// PowerPoint specific data
+</span><span class='line'>  + msoffice:slide (msoffice:pptslide) sns
+</span><span class='line'>
+</span><span class='line'>// Excel specific data
+</span><span class='line'>  - msoffice:full_content (string)
+</span><span class='line'>  - msoffice:sheet_name (string) multiple
+</span><span class='line'>
+</span><span class='line'>[msoffice:pptslide]
+</span><span class='line'>  - msoffice:title (string)
+</span><span class='line'>  - msoffice:text (string)
+</span><span class='line'>  - msoffice:thumbnail (binary)    </span></code></pre></td></tr></table></div></figure>
+
+
+<h1>JBossアプリケーションサーバとの関係</h1>
+
+<p><a href="http://stackoverflow.com/questions/6392815/what-does-modeshape-offer-that-jackrabbit-doesnt/6399032#6399032">StackOverflowにおける主開発者Randall Hauchからの返答によると</a>、</p>
+
+<ul>
+<li>HibernateやJGroupsなど、JBossプロジェクトの技術は利用しているが、JBoss ASに依存しているわけではない。</li>
+<li>J2EEサーバだけでなく、J2SEアプリケーションにModeShapeを組み込むことも可能である。</li>
+<li>但し、JBoss ASに簡単にディプロイできるような工夫はされている。</li>
+</ul>
+
+
+<h1></h1>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[CRaSH]]></title>
