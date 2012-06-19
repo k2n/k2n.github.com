@@ -4,7 +4,7 @@
   <title><![CDATA[Category: japanese | Code Critique]]></title>
   <link href="http://k2n.github.com/blog/categories/japanese/atom.xml" rel="self"/>
   <link href="http://k2n.github.com/"/>
-  <updated>2012-06-19T16:13:57-07:00</updated>
+  <updated>2012-06-19T16:18:22-07:00</updated>
   <id>http://k2n.github.com/</id>
   <author>
     <name><![CDATA[Kenji Nakamura]]></name>
@@ -56,27 +56,34 @@
  +- k
  +- m
  +- n
-</code>
-```
-+- foo
- +- bar
- |  +- baz
- |  |  +- taz
- |  |  +- zaz
- |  +- raz
- +- bum
+</code></li>
+</ul>
 
-<pre><code>+- bot
+
+<p>```
++- foo
+   +- bar
+   |  +- baz
+   |  |  +- taz
+   |  |  +- zaz
+   |  +- raz
+   +- bum</p>
+
+<pre><code>  +- bot
 </code></pre>
 
-<code>
-  この二つのリポジトリ（物理的なストレージが異なっていても構わない）を下記設定で統合する。
-</code>
-/ => /                         for source "S1"
-/alpha => /foo/bar             for source "S2"
-<code>
-  すると、統合した結果下記のような一つの仮想的なツリーを構築できる。
-</code>
+<p>```</p>
+
+<p>この二つのリポジトリ（物理的なストレージが異なっていても構わない）を下記設定で統合する。</p>
+
+<p><code>
+/ =&gt; /                         for source "S1"
+/alpha =&gt; /foo/bar             for source "S2"
+</code></p>
+
+<p>すると、統合した結果下記のような一つの仮想的なツリーを構築できる。</p>
+
+<p>```
 +- a
 |  +- i
 |  +- j
@@ -85,15 +92,17 @@
 |  +- m
 |  +- n
 +- alpha
- +- baz
+   +- baz</p>
 
-<pre><code>+- taz
-|  +- zaz
-+- raz
+<pre><code>  +- taz
+  |  +- zaz
+  +- raz
 </code></pre>
 
 <p><code>``
-  マッピング定義で、</code>/foo/bum`は指定されていないので統合されたツリーには反映されていないことに注目。</p></li>
+マッピング定義で、</code>/foo/bum`は指定されていないので統合されたツリーには反映されていないことに注目。</p>
+
+<ul>
 <li>Subversionコネクタ：Subversionの内容を、<code>nt:folder</code>と<code>nt:file</code>ノードを使用して表現するコネクタ。リード・ライトの両方が可能。</li>
 <li>JBoss Cacheコネクタ：JBoss Cache（クラスタリングソリューション：JBoss Infinispanがその役割を後継している）を用いたJCRリポジトリを生成するためのコネクタ。新規ではInfinispanを用いるべき。</li>
 <li>Infinispanコネクタ：複数のノードのヒープメモリを仮想的な一つのメモリとして提供するInfinispanをJCRリポジトリのストレージとして利用するためのコネクタ。</li>
