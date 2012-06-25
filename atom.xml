@@ -4,7 +4,7 @@
   <title><![CDATA[Code Critique]]></title>
   <link href="http://k2n.github.com/atom.xml" rel="self"/>
   <link href="http://k2n.github.com/"/>
-  <updated>2012-06-19T16:54:06-07:00</updated>
+  <updated>2012-06-25T10:32:44-07:00</updated>
   <id>http://k2n.github.com/</id>
   <author>
     <name><![CDATA[Kenji Nakamura]]></name>
@@ -12,6 +12,17 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ZK DataBinding]]></title>
+    <link href="http://k2n.github.com/blog/2012/06/22/zk-databinding/"/>
+    <updated>2012-06-22T11:12:00-07:00</updated>
+    <id>http://k2n.github.com/blog/2012/06/22/zk-databinding</id>
+    <content type="html"><![CDATA[<p><a href="http://zkoss.org">ZK</a>はGWTのように、ロジックをJavaで、UIをXMLで記述することで、クライアント側JavaScriptやHTMLを一切記述することなくAJAX UIを実現するフレームワークである。
+ZKはJavaBeansをUIにバインディングし、UI要素とBeanの間のデータのやり取りを自動化することができる。
+ZKの最新版はバージョン６で、<a href="http://ja.wikipedia.org/wiki/MVVM">MVVM</a>モデルを採用しており、データバインディングもそれに従って再実装されているが、今回はZKバージョン５を使用しているため、古い方法のバインディングについて説明していることに注意されたし。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[JBoss ModeShape]]></title>
